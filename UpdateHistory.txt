@@ -1,0 +1,1743 @@
+﻿================================================================================
+    Update History 
+================================================================================
+작성 예)
+#2015-09-16, jhLee
+1. Update 내용
+  - Upate 상세 내용 및 설명, 관련 Source code
+================================================================================VERSION 2017-09-12.1
+//====================================================================
+VERSION 2018-08-03-1
+//2018-08-03,NAM,when Contact Result is NONE_CELL
+if (pCell->m_strContactResult == _T("NG_CELL_LOADING") || pCell->m_strContactResult == _T("NG_DIC_CHECK") 
+					|| pCell->m_strContactResult == _T("NONE_CELL"))
+
+VERSION 2018-07-30-1
+3. DIC_CHECK NG인데 CELL LOG LASTRESULT에 CONTACT NG로 남는 버그 수정
+	else if (pCell->m_Zone_A.CellLoadingClass != GOOD_CELL || pCell->m_Zone_A.ContactCurrentClass != GOOD_CELL)
+		//else if (pCell->m_Zone_A.AZoneClass != GOOD_CELL || pCell->m_Zone_A.ContactCurrentClass != GOOD_CELL)
+
+
+	SetProductData() 함수에서 DIC_CHECK가 추가되어 조건을 추가함, 모두 만족해야 CONTACT GOOD
+	//if ( pCell->m_Zone_A.AZoneClass == GOOD_CELL && pCell->m_Zone_A.ContactCurrentClass == GOOD_CELL)
+	if (pCell->m_Zone_A.CellLoadingClass  == GOOD_CELL 
+		|| pCell->m_Zone_A.ContactCurrentClass  == GOOD_CELL
+		|| pCell->m_Zone_A.RegPinClass  == GOOD_CELL
+		|| pCell->m_Zone_A.DicCheckClass  == GOOD_CELL)
+	{
+
+ 1. CIM_CellInfoRequestCheck()함수에 아래 조건 추가
+//2018-07-30,SKCHO, CELL정보가 없으면 0을 리턴
+	if(tagCell.IsExist()==FALSE)
+	{	
+		return 0;
+	}
+
+//2018-07-25,NAM, Checking the EXISTENCE OF  NG TRAY IN BUFFER 
+in state NG TRAY TR GET
+				if( (TrayData_Exist(NG_TRAY_PORT, TRAY_INFO_POS_NG_OUT_REQ_BUFFER) == FALSE)
+					&&(TrayData_Exist(NG_TRAY_PORT, TRAY_INFO_POS_NG_IN_BUFFER)==FALSE)) 
+
+VERSION 2018-06-29-1
+
+//2018-07-03,NAM, Check When ULD ROBOT PUT IN TRAY -> AMT Send Ready OFF
+//2018-06-29,NAM, Add Conveyor Mode Option and Auto Conveyor MOde Delay Time  
+//2018-06-26,NAM,Set ready ON when initilising.
+	theUnitFunc.SetOutPutIO(Y_HYBRID_ROBOT_READY,ON);
+
+- 2018-06-21,GHLEE, 홍영기 과장님 요청으로 RUN 상태 CHANGE 후 TRAY ALARM 다시 확인하고 FAULT 보고
+- 2018-06-21,GHLEE, 홍영기 과장님 요청으로 START 시 TRAY ALARM 확인 하지 않도록 변경
+
+VERSION 2018-06-17-1
+- 2018-06-17,MERGY 진행(TMD 메세지 + AGV 수정 소스) -> 3층용
+
+//2018-06-09,SKCHO, 
+ 1. PORT EMPTY/FULL 알람 발생 상태에서 시작 안되게 수정
+ 2. PORT FULL/EMPTY 알람 발생시 진행 안되게 해야하므로 삭제
+
+ 1. PORT EMPTY or FULL 알람 발생(#1) ->상태 변경 보고 -> 설비 정지(상태표시 RUN) -> PORT EMPTY or FULL 알람 발생(#2)
+  -> 상태 변경 보고 없음 -> (#1) 알람 해제 -> 상태 변경 보고 없음 / 설비 정지 상태 유지 -> #2 알람 해제 -> 알람(#1,#2) 클리어 보고
+  -> 상태 변경 보고(RUN)
+
+ 2. PORT EMPTY or FULL 알람 발생(#1) ->상태 변경 보고 -> 설비 정지(상태표시 RUN) -> 작업자 설비 정지
+  -> 상태 변경 보고(606) -> 설비 시작 -> 시작 안됨 -> (#1)알람 클리어 후 동작 가능
+
+ 3. PORT EMPTY or FULL 알람 발생(#1) ->상태 변경 보고 -> 설비 정지(상태표시 RUN) -> 일반 알람 발생(#2)-> 알람 클리어 버튼
+ -> 알람 클리어 보고 안함 -> 런 시작 안됨 -> #1 알람 해제 -> #2 때문에 알람 클리어/상태변경 보고 안함 -> #2 알람 클리어 버튼
+ -> 알람 클리어 보고 #1,#2 -> 런 시작
+
+ 1. HAPPEN PORT EMPTY OR FULL ALARM(#1) -> REPORT TO UPPER ABOUT CHANGE MACHINE STATE -> MACHINE DOWN(LOOK LIKE 'RUNKNING') -> HAPPEN PORT EMPTY OR FULL ALARM(#2)
+  -> NOT REPORT CHANGE MACHINE STATE -> (#1) CLEAR ALARM -> NOT REPORT CHENGE MACHINE STATE / KEEP MACHINE DOWN -> (#2) CLEAR ALARM -> (#1, #2) REPORT ALARM CLEAR
+  -> REPORT CHANGE MACHINE STATE(RUN)
+
+ 2. HAPPEN PORT EMPTY OR FULL ALARM(#1) -> REPORT TO UPPER ABOUT CHANGE MACHINE STATE -> MACHINE DOWN(LOOK LIKE 'RUNKNING') -> MACHINE STOP FROM WORKER
+  -> REPORT CHANGE MACHINE STATE(606) -> MACHINE RUN -> CAN NOT RUNNING -> (#1) WE CAN RUNNING AFTER ALARM CLEAR
+
+ 3. HAPPEN PORT EMPTY OR FULL ALARM(#1) -> REPORT TO UPPER ABOUT CHANGE MACHINE STATE -> MACHINE DOWN(LOOK LIKE 'RUNKNING') -> HAPPEN ANOTHER ALARM(NOT TRAY ALARM)(#2) -> ALARM CLEAR BUTTON
+  -> NOT REPORT ALARM CLEAR -> CAN NOT MACHINE START -> (#1) CLEAR ALARM -> CAN NOT REPORT ALARM CLEAR AND CHANGE MACHINE STATE(BECAUSE #2) -> (#2) ALARM CLEAR BUTTON
+  -> REPORT ALARM CLEAR (#1,#2) -> START MACHINE
+
+VERSION 2018-05-30-2
+-2018-06-02,GHLEE
+ - 고객사 요청으로 A ZONE에서 4개의 MSG 다 받은 다음 TURN 하는걸로 시퀀스 변경
+ - A ZONE에서도 CONTACT CHECK 하도록 수정
+
+VERSION 2018-05-30-1
+-2018-05-17,SKCHO
+ - REGPIN, DIC_CHECK 추가, TIMEOUT 8초 변경
+ - CONTACT_NG(CONTATC_CURRENT NG)일경우에만 RECONTACT하고
+   DIC_CHECK_NG일경우에는 RECONTACT하지않음(고객사 김웅 프로요청)
+
+//2018-05-19,MGYUN, RECONTACT RESET MESSAGE
+ - 리컨택 시 1차로 받은 메세지들 NONE_CELL로 초기화 
+ - 모터 토크, GMS4번 값 스펙 오버 시 일정 값 대입.
+ - CONTACT_RETRY FALSE시 1,2차 결과 모두 반영
+VERSION 2018-05-28-1
+1. TMD NAME 길이가 40 이상 시 알람 발생하여 런 진행 못하게 - 고객사 송영현 대리 요청.
+- 신규 추가 알람
+ALARM_TMD_NAME_LENGTH_OVER   - 신호기로 부터 받은 TMD NAME이 40 이상 일 시 발생
+
+- 알람 발생 위치 (1. 신호기로부터 파싱 받은 곳, 2. 트랙인 보고시 심에게 데이터 전달 시)
+theUnitFunc.SetError(ALARM_TMD_NAME_LENGTH_OVER); 
+//2018-05-25,MGYUN,
+
+//2018-05-23,NAM, Cell Load Check Tact Time Start. 
+When ULD Robot Put Finish, Cell Load Check Tact Time will Start 
+Machine will wait for 5 seconds and Machine State Change to Idle
+			theProcBank.m_CellLoadChkTact.Start();
+
+
+첫번째 테스트 내용
+1. c/v PUT 동작 중 C/V가 RUN 상태가 아닐 때 무한정지상태가 걸려 바로 GODO TRAY PUT 할 수 있게 변경.
+ - 스레드에서 FLAG 변수를 체크하여 시퀀스 GOOD , C/V PUT 시퀀스 시작하게
+추가 : theProcBank.HybridDelayFlag = FALSE;
+FALSE : C/V PUT
+TRUE  : TRAY PUT
+//2018-05-22,MGYUN,
+
+2. 자동 설비 IDLE 변경 시점이 CellData_LDConvIn() 호출 보다 타이밍이 빨라 
+theProcBank.m_CellLoadChk 변수가 계속 TRUE 상태여서 아래의 조건이 호출 되지 않아 계속 RUN 상태 유지 발생하여 
+LD ROBOT GET : STEPEND 에 FALSE로 변환하게 넣음.
+
+if (theProcBank.m_CellLoadChkTact.Stop(FALSE) > theConfigBank.m_Option.m_dRunDownWaitTime && theProcBank.m_CellLoadChk == FALSE
+				&& _func.CellDataMachineChk(CELL_POS_LDROBOT,CELL_POS_UD_ROBOT) == FALSE)
+			{
+				theProcBank.ChangeMachineState(CONST_MACHINE_STATE::MACHINE_IDLE);
+				::PostMessage(GetMainHandler()->m_pGUIFrame->GetView(eFORM_Main)->m_hWnd, UDMSG_IDLECHAGNE_UPDATE, 0,0); 
+				theLog[LOG_LOAD_DELAY_TACT].AddBuf(_T("설비 IDLE 변경 시작"));
+				theLog[LOG_SYSTEM].AddBuf(_T("자동 설비 IDLE 변경"));
+				theProcBank.m_CellLoadChk = TRUE;
+				theProcBank.m_CellLoadRunChk = TRUE;
+			}
+
+//2018-05-22,NAM, Having Cell in Machine.
+
+
+VERSION 2018-05-18-1
+//2018-05-18,NAM, 
+- Robot Get when Robot Conv Put. UD Robot Get 시작 시퀀스 하기 위한 조건에 
+- stateUDRobotConvPut.IsStoped() 추가
+
+//2018-05-16,MGYUN,추가
+ - 셀 데이터 이동 관련 작업
+
+//2018-05-16,MGYUN, 351 보고 후 2초 딜레이 후에 350 보고 할 수 있게 딜레이 추가 요청
+ - 김진수 프로 요청.
+
+//2018-05-16,SKCHO,추가
+ - 3층 오로라 라인 CONTACT_NG임에도 불구하고 검사를 진행하여 문제되는 점 수정. 
+ - B_Zone_SetContactCount 함수 위치 변경.
+
+VERSION 2018-05-14-1
+1. HYBRID CONV 시퀀스 일부 추가
+   - MAIN THREAD StateUDRobotConvPut.Reset,StateUDRobotConvPut.Start, StateUDRobotConvPut.Run추가
+   - StateUDRobotConvPut클래스추가
+   - ConvPut과 관계있는 Start() 조건에 StateUDRobotConvPut.IsStop() 추가
+
+
+VERSION 2018-04-20-2
+//2018-05-10,MGYUN, 하이브리드 관련 작업 
+ - I/O 추가 -> TYPE A
+X_HYBRID_CONV_READY			X_12D				Y_HYBRID_ROBOT_RUN			Y_125
+X_HYBRID_CONV_RUN			X_12E				Y_HYBRID_SEND_COMPLETE		Y_126
+X_HYBRID_CONV_INTERFACE		X_12F				Y_HYBRID_ROBOT_READY		Y_127
+
+- I/O 신호만 주고 받는거 UI에서 확인 할 수 있게 구현. CCLINK 아니기 때문에
+
+//2018-05-11,NAM
+1. Contact Delay in Zone A and Zone B 
+   Time changing from 1sec to 10sec
+    (default 3sec )
+ - 오로라 라인 새로운 TMD로 인하여 기존 A_Zone_ContactChk가 3초였던 부분을 5초로 변경 함에 따라 사용자가 시간을 설정 할 수 있게 UI 및 기능 구현.
+
+//2018-05-07,NAM, 
+1. Last state and current state is same (MACHINE_CHECK) 
+ (설비 RUN중 알람 발생 후 RESTART 하는데 RESTART 도중에 알람이 발생 시, 
+ CEHCK상태에서 또 CHECK상태로 변환하면서 stateRestart.Start(); 부분을 호출 하지 않아 
+ 계속 CECHK상태에서 알람이 발생하게되는 문제 발생하여 다음과 같이 추가)
+ 
+2. All Servo Motors checked when click start button
+  (런 시작 시 나머지 모터들 SERVO ON 체크 추가)
+
+//2018-04-29,GHLEE, 추가
+1. RUN 진행 시 LAMP 빨간불 점등 문제 발생
+- CONST_MACHINE_STATE의 enum 정의에서 MACHINE_CHECK 추가정의로 LampChange 함수의 STATUS_LAMP_DESCRIPTION enum 정의랑 일치하지 않음
+- 모든 설비상태에 따른 조건 추가(CHANGEMACHINESTATE 함수)
+
+//2018-04-26 
+1. bResult == FALSE -> TRUE
+	if(bResult == TRUE)
+	{
+		theSocketInterFace.SendCmdStateToDataPC(EQUIP_SET_EQUIPMENT_STATUS_CHANGE, E_EQST_MATCH_EXECUTING);
+	}
+2. // 설비 Alarm 상태면 진행 안함
+		if(theProcBank.m_AlarmID != ALM_NONE)
+		{
+			if(theProcBank.m_AlarmID != ALARM_CIM_ATTRIBUTE_FAIL
+				&& theProcBank.m_AlarmID != ALARM_OKTRAY_ID_ASSIGN_REPORT_FAIL
+				&& theProcBank.m_AlarmID != ALARM_OKTRAY_ID_ASSIGN_REPORT_TIMEOUT
+				&& theProcBank.m_AlarmID != ALARM_OKTRAY_ID_RELEASE_REPORT_FAIL
+				&& theProcBank.m_AlarmID != ALARM_OKTRAY_ID_RELEASE_REPORT_TIMEOUT
+				&& theProcBank.m_AlarmID != ALARM_NGTRAY_IN_PORT_ALIGN_EMPTY  // 2018-04-24,NAM , ADD ALARM
+				&& theProcBank.m_AlarmID != ALARM_OKTRAY_IN_PORT_ALIGN_EMPTY
+				&& theProcBank.m_AlarmID != ALARM_OKTRAY_OUT_BUFF_PORT_FULL
+				) 
+			{
+				continue;
+			}
+		}
+3. || theProcBank.GetMachineState() == CONST_MACHINE_STATE::MACHINE_CHECK)//2018-04-26,NAM, ADD STATE TO CLICK MENU BUTTON AND MODE PM 
+
+//2018-04-20,SKCHO, RESTART이후에 RUN으로 상태 보고
+1. MACHINE_CHECK 상태 추가
+2. LAMP SETTING에 MACHINE_CHECK 램프 정보 추가
+3. MACHINE_CHECK 상태에서는 상위 알람보고 안함.
+4. RESTART상태에서는 장비 상태가 "CHECK"로 표시됨
+
+*확인포인트
+1. 런중에 실제 알람 발생(정상 알람 보고 및 화면 표시 확인) 
+2.	1번 후 리스타시 장비상태  "CHECK " 확인, 상태 변경 보고 안함 확인
+3. 리스타트 중 알람 발생 하면 상태변경 보고 안하고  설비에 알람 표시 되는지 확인
+4. 리스타트 완료 후 설비 정상 런으로 바뀌고 상태 변경 보고 되는지 확인
+
+이외에도 경우에 수 확인하여 테스트 진행할 것
+
+
+//2018-04-18,NAM, Getlength for "Fail" is 4
+ - MCR로부터 읽어온 데이터를 체크하는 부분에 있어 FAIL이 들어왔는데 데이터 길이가 1이라 맞지 않아 수정
+  m_bRtn[0] = (MCR_GetLastID(JIG_CH_2).GetLength() > 1) ? TRUE:FALSE; 
+
+
+//2018-0420,SKCHO, TRAY가 없어서 발생한 알람에서는 장비 상태 변경을 다르게 한다.(홍영기 과장 요청)
+트레이가 없어 장비가 멈추면 알람보고 하고 장비 상태는 RUN 유지하고 상위에 상태 변경만 보고
+
+1.신규 추가 알람
+ALARM_OKTRAY_IN_PORT_ALIGN_EMPTY   - OK IN ALIGN에 TRAY가 없을때 알람
+ALARM_OKTRAY_OUT_BUFF_PORT_FULL   - OK OUT BUFF에 TRAY가 있을때 알람
+ALARM_NGTRAY_IN_PORT_ALIGN_EMPTY - NG IN ALIGN에 TRAY가 없을때 알람
+ALARM_NGTRAY_OUT_BUFF_PORT_FULL - NG OUT BUFF에 TRAY가 있을때 알람  //추후에 추가
+2.알람 발생 위치
+theUnitFunc.SetError(ALARM_OKTRAY_IN_PORT_ALIGN_EMPTY);//2018-04-20,SKCHO, AGV IN IDEL TIME시작할때 알람 발생
+theUnitFunc.SetError(ALARM_OKTRAY_OUT_BUFF_PORT_FULL); //2018-04-20,SKCHO, AGV OUT IDEL TIME시작할때 알람 발생
+theUnitFunc.SetError(ALARM_NGTRAY_IN_PORT_ALIGN_EMPTY);  //2018-04-20,SKCHO, AGV NG IN PORT에 TRAY 없을때 알람 발생
+3. 알람 해제 위치
+ - GOOD TRAY IN LIFT PITCH 시퀀스 끝에서 FALSE
+ - GOOD OUT LIFT  시퀀스 끝에서 FALSE
+ - NG TRAY IN LIFT PITCH  시퀀스 끝에서 FALSE
+  위 위치에서 아래 함수 콜한다.
+   ResetTrayAlarm(int nIndex)  //tray 알람 해제 함수
+
+
+//=======================================================================
+
+
+VERSION 2018-04-01-1(MONITORING)
+1. FDC 오보고 관련 소스 수정 및 테스트
+2. track out info 시퀀스 cell log 이후로 이동
+
+VERSION 2018-03-27-1(MONITORING)
+1. MCR STATUS(통신) 확인 수정.
+2. 상류 설비 IN DELAY 빠져 있어서 03.12 소스 보고 다시 넣음. //2018-03-12,MGYUN, 참조
+//2018-03-27,MGYUN,
+
+VERSION 2018-03-16-1(MONITORING)
+1. PRODUCT FINISH
+//2018-03-16,NAM,
+2. 시작 버튼 누를 시 서보 체크 부분 함수에 넣음
+//2018-03-16,MGYUN,
+
+VERSION 2018-03-15-1(MONITORING)
+1. 고객사 요청으로 턴테이블(룰렛정보) 멜섹 기록 추가
+ - A ZONE : 0
+ - B ZONE : 1
+ - C ZONE : 2
+ - D ZONE : 3
+2. AMT JIG SKIP STATUS, CELL LOG 관련 MELSEC 추가 완료 , 설비 인터락 관련 멜섹 기록작업 진행(확인 필요)
+//2018-03-15,MGYUN,
+3. MONITORING CONTACT PERCENTAGE FOR LIVE, DAY, WEEK, MONTH 추가 완료
+- CONTACT (실시간, 이전1시간데이터, 주, 월) 추가.
+//2018-03-15,NAM,
+
+VERSION 2018-03-14-1(MONITORING)
+1. 알람 관련 작업
+ - 알람 코드(정수형)으로 알람 발생 시 기록 <-> 클리어 시 0으로 초기화
+ - 알람 원인(CString) 기록 - 클리어 시 ""로 초기화
+2. CELL LOG MELSEC 기록 추가
+- CIM_CellTrackOut(); 밑에 추가.
+3. GOOD IN LIFT 트레이 마지막 단 체크 함수 정의.
+//2018-03-14,MGYUN,
+
+VERSION 2018-03-13-1
+1. 마지막 트레이 감지 센서 X_GOOD_LD_TRAY_FINAL_SEN_1(X_12C) 추가
+2. 모니터링 CELL LOG 기록 항목 주소 및 함수 정의
+3. TACT TIME 저장 변수 ProcDataBank에 전역으로 선언.(Melsec 쓸때 쓰려고)
+4. 런 진행 시 디버깅 결과 MCR CH 1하나만 데이터 기록하여 수정.
+//2018-03-13,MGYUN,
+
+VERSION 2018-03-12-1
+1. MELSEC 주소, 길이 편하게 수정 할 수 있게 헤더파일에서 구분하여 나눔(엑셀 파일로도 관리)
+2. PPID, TACT TIME(LD - ULD), CONTACT(실시간), PRODUCT(실시간), 상류설비 IN DELAY, AGV IN/OUT DELAY 실시간(초) 추가
+//2018-03-12,MGYUN,
+
+
+VERSION 2018-03-10-1
+//2018-03-10,MGYUN,NAM MONITOR 작업
+- TRAY STATUS (1 - 6) 상태 기록 추가 (처음 시작 시 1-6 상태를 알려 줘야 하는 건지?)
+ -> SendCmdTrayToDataPC 함수에 350,351,352,353 보고 시 각각 상태 보고
+
+- FDC, TRAY STATUS, MCR, DCR 추가
+
+- STEP ID(데이터 존재 할때) MELSEC WIRTE 구현
+ ->CFormMain::OnTimer
+ else if(nIDEvent == DISPSTATETIME)
+	{		
+		GetCellStatus();
+		SetStautsChange();	
+		
+		//2018-03-10,NAM, LD CONV - LD TR까지 데이터 존재 할 시 STEP ID MELSEC 기록.
+		theMonitorBank.WriteStepID();
+
+
+//2018-03-09,SKCHO
+//셀로그에 CONTACT NG인데 검사 결과가 공백인 버그
+//CONTACT NG에서 검사 스킵하고 DZONE에서 TURN OFF인경우 JUDGEFINALCLASS함수 수행 안함.
+//아래 IF 조건 삭제
+//if(m_bRtn[2] == FALSE || m_bRtn[3] == FALSE)
+//{
+	JudgeFinalClass(JIG_CH_1);
+	JudgeFinalClass(JIG_CH_2);
+//}
+
+
+//2018-03-08,MGYUN, MONITOR 작업
+- MCR STAUTS /  LD ROBOT / ULD ROBOT / EDGE ALIGN / PRE-ALIGN 추가
+
+//2018-03-07/08, MONITOR BANK 클래스 추가(모니터링 기능 전용 클래스)
+//2018-03-07,SKCHO
+ - EQPID / PPID / EQSTATUS 추가
+//2018-03-07,SKCHO
+ - SW VERSION 추가
+
+VERSION 2018-03-03-1,SKCHO
+1. PASSWORD 다이얼로그 UI 새로 추가
+
+
+
+VERSION 2018-02-12-1,JSJUNG 우선 횡전개 #12
+1. GOOD_CELL이 아닌경우에만 MES코드저장
+2. MESCODE매칭되는것이 없을경우에는 GDCAMTE 저장
+  -현재 엑셀파일(셀로그,NFCODELIST) 확인결과 멍얼룩,CONTACT_NG(이건 좀 이상함 왔다갔다 하는듯 확인필요),PTN_DISPLAY 일경우 
+  -TEST 필요한데 런이 안들어와 우선 주석 처리
+
+VERSION 2018-02-09-1,JSJUNG 우선 횡전개 #12, #13
+1. TRACKOUT INFO 파일 생성시 GOOD일때는 0, NG일때는 MESCODE저장
+
+VERSION 2018-02-08-1,JSJUNG
+1. TRACKOUT INFO 파일 생성(은동기 책임 요청)-우선 횡전개 #12, #13
+  - D:\\auto-test\\TRACKOUT INFO\\TRACKOUT_CELLID_INNERID.TXT
+  - EQP_ID, CELL_ID, INNER_ID, DEFECTNAME
+  -----------------2018-02-12 위파일 생성시 자동화쪽에서 읽고 지운다고 하였는데 금일까지 확인시 읽고 삭제하지 않음--확인필요
+
+2. 로봇 MOVE LOG 위치별로 분류/ ALIGN 값 추가
+
+VERSION 2018-01-26-1,JSJUNG
+1. LD/UD ROBOT 티칭값 / 현재 위치값(워드영역/READ 부)
+
+VERSION 2018-01-22-1,JSJUNG
+1. 비전프로그램과 로봇 소켓통신 끊길때 리트라이 추가
+  - 로봇과 비전이서 해결하지 못하여 일단 우리쪽에서 로봇 신호 하나 살려서 소켓통신 살리는 방법으로함.
+2. //2018-01-22, PA STAGE FPCB SENSOR 설치 대비
+3. //2018-01-22, LD CONV FPCB SENSOR 설치 대비
+
+VERSION 2017-12-29-1
+//2017-12-29,SKCHO
+1. PG ,ALIGN PC 리셋되었을 경우  START BUTTON누르면 프로그램 다운 버그 수정
+  - 빈 소켓의 포인터 참조하여 다운됨
+
+1. FBCB 설치 대비 작업 내용
+ - 66호기 적용 센서(TYPE B) 감지 시 카운트 증가 하게
+//2018-01-22,GHLEE,
+
+VERSION 2018-01-18-1,JSJUNG
+1. LDTR X/Z GET/PUT 서보모터 위치 로그 추가.
+2. //2018-1-20, NG OUT LIFT 서보 온 체크 추가. (//2018-1-20 이걸로 찾아주세요!)
+3. //2018-01-20, FPCB SEN OPTION 추가. (//2018-01-20 이걸로 찾아주세요!)
+
+VERSION 2018-01-11-1,JSJUNG
+1. 트레이가 들어 오다가 삐뚤어져 못들어 오는 경우 버퍼 컨베이어	1번 센서를 감지 하고 트레이 투입 실패 알람
+2. AGV OUT IDLE TIME ,GOOD_OUT_TRAY_PORT 사용안함 GOOD_IN_TRAY_PORT로 변경
+3. 로드 컨베이어 1번센서 오감지 현상으로 인하여 엣지얼라인 찍는경우 대비 텍타임 느려지면 시간 다시 삭제 검토
+
+
+VERSION 2018-01-10-1,JSJUNG
+1. 검사파일 폴더 접근 및 파일 생성 확인 3번에서 5번 시도로 변경
+2. theDeviceMotion.Open_Mp2100(MP2100_THREAD_FDC_MONITOR); <- 필요 없다 판단되어 삭제
+3. FDC 쓰레드 부분 : Sleep(100)->Sleep(300); FDC파일 저장 부분 죽는현상 때문 변경 test
+
+VERSION 2017-12-29-1
+//2017-12-29,SKCHO
+1. PG ,ALIGN PC 리셋되었을 경우  START BUTTON누르면 프로그램 다운 버그 수정
+  - 빈 소켓의 포인터 참조하여 다운됨
+2.온도 통신에서 통신 데이터 길이가 200일때 프로그램 다운현상 방지 및 로그 추가
+
+
+VERSION 2017-12-27-1,KHLEE
+//2017-12-27,KHLEE, 
+1. UnitCtrlBank에서 MAIN POWER ERR 중복 누적 현상 수정
+//2017-12-27,SKCHO, 
+1. GMS LOG파일 기록 추가
+
+VERSION 2017-12-25-1,SKCHO
+//2017-12-26,SKCHO, 
+1. IOCHECKTHR에서 353보고 조전 BUFFER_SENSOR #1만 체크를 #1과 #4SENSOR 동시 체크로 수정
+2. GOOD TRAY OUT LIFT함수에서 OUT CONV SENSOR1,4 감지 추가 하여 트레이가 있을때 올라가는 것
+	m_bRtn[2] = (OutConv_TrayChk(CONV_SEN_4, SENSOR_OFF) && OutConv_TrayChk(CONV_SEN_1, SENSOR_OFF));
+		
+//2017-12-25,SKCHO, 
+1.UI에 프로그램 시작 시간 표시
+2.PA STAGE 원점 동작 시 STAGE에 CELL 있으면 PRE ALIGN 결과 초기화 후 다시 ALIGN
+
+
+VERSION 2017-12-22-1,SKCHO
+//2017-12-22,SKCHO, 
+1. OK TRAY IN LIFT Z ALIGN POSITION 추가
+   - Z ALIGN 이동 후 얼라인 가이드 동작하게 함
+
+2. OK TRAY OUT LIFT Z ALIGN PISITION 추가
+  - 트레이 배출시  ALIGN POS에서 가이드 동작하고  DOWN으로 이동 후 컨배어 배출
+  - 배출 동작시 알람 발생하여 다시 할 경우 DOWN위치이면 ALIGN 위치 이동은 캔슬
+
+3. PA STAGE 원점 동작 추가
+  - 프로그램 시작 후 설정 시간 이상되면 RESTART시 PA STAGE원점 이동하고 티칭위치 이동하게 함
+  - 기본 24시간을 설정함.
+  - 시간이 0이면 동작 안함.
+
+4. 로봇 셀 개수 화면에 표시
+  - 로봇이 세을 놓게될 트레이 포켓의 번호를 표시함.
+
+
+
+VERSION 2017-12-18-1,SKCHO
+//2017-12-19,KHLEE, 
+  - 알람 발생 후 리스타시 TR에 VAC ON이면 Z축 안내리고 바로 이동
+
+
+//2017-12-18,SKCHO,
+1. LD ROBOT VAC FIAL 시 로봇 자체 RETRY 기능 추가
+2. START시 LDROBOT MOTOR NOT ENERGIZE SIGNAL 체크 후 런 진행되게 추가
+3. START시 LDROBOT 시퀀스 상태(GETINTERLOCK 신호)에 따라 원점 이동 / 셀 제거 운영 기능 추가
+   - //1010,78LINE(ERR_Return) -> 원점이동후 셀 제거
+   - //1010,64LINE(COMP_RETURN) -> 그냥 원점만 해도 됨
+   - //1020, 1030  -> 그냥 원점만 해도 됨
+
+VERSION 2017-12-12-1,SKCHO
+ //2017-12-12,SKCHO,
+ 1.EDGE ALIGN visoin grap에러 발생시 카메라 재연결 복구 시간 5.5초이어서 시간5->7로 변경
+ 2.PA 끝난후 PATR Y축 SHUTTEL GET위치로 이동(택 단축 관련 김동호 프로 요청)
+ 3.TRAY VISION RETRY 삭제, TRAY VISION RESUTL TIMEOUT 5-> 10초 변경
+ 4.검사존 택 타임 2로 나누어서 1개 셀당 택으로 표시
+ 5.JIG BLOWER 기능 선적용
+ 6.배출대기 상태에서 새로운 배출 상태가 되었을 경우 352보고 누락되는 버그 및 상태 변경시 TRAY ID모르는경우 352보고 안되게수정
+   -//2017-12-12,SKCHO, TRAY ID없으면 352보고 안되게 수정
+			if(!_func.TrayData_Exist(GOOD_IN_TRAY_PORT,TRAY_INFO_POS_GOOD_OUT_BUFFER) && theProcBank.m_strClose352TrayID != _T(""))
+			{
+   - //2017-12-11,SKCHO 추가 및 수정
+			if(theUnitFunc.ReadPortEvent353())
+			{
+				theProcBank.m_strClose352TrayID = theProcBank.m_strClose353TrayID;
+
+			}
+			else
+			{
+				theProcBank.m_strClose352TrayID = theProcBank.m_strCloseTrayID;	//2017-07-07,SKCHO
+
+			}
+ 
+ 		
+VERSION 2017-12-8-2,SKCHO
+ 1.GOOD TRAY TR GET 시퀀스에 YPOS 스텝 추가  => 삭제 (택 느림)
+  - TRAY IN LIFT TOP SENSOR 알람 방지 
+ 2. UNIT INTERLOCK QUAL PASS
+  - UNIT INTERLOCK EVENT 보고시 SLEEP(50) 추가 한번에 연속으로 주면 운영과 CIM 사이 통신 안됨
+  - CIM 연결시 UINIT 초기 상태 전송
+
+VERSION 2017-12-04,SKCHO
+//2017-12-07,SKCHO
+1. TACT 단축 관련 수정
+  - LD TR Z UP후 1초 딜레이 삭제
+  - BLOWER OFF시에 AZONE VAC ON 신호
+  - BLOWER 시간 0.2->0.1 초 단축
+2. OK TRAY TR Y 축 이동 후 VAC 체크 추가
+  - 이동 중 떨어지는 경우 발생하여 추가함.
+
+VERSION 2017-12-04,SKCHO
+//2017-12-04,SKCHO, 
+1. 352보고 후 프로그램 재시작 후 정보 생성했을 때 353보고 조건 만들어줌
+  - ReadPortEvent353()
+  - SavePortEvent353(CString strID)
+2. GOOD TRAY TR 정보 생성 전에 알람 발생 시 버큠 체크해서 없으면 오프
+  - CStateRestart::Restart_VacuumOn()
+
+VERSION 2017-12-02,SKCHO
+//2017-12-02,SKCHO
+1.GOOD TRAY TR GET 시퀀스에 YPOS 스텝 추가
+  - TRAY IN LIFT TOP SENSOR 알람 방지 
+
+2. MANUAL AGV RECEIVE 스레드에서 COMPLETE 버튼 삭제
+
+VERSION 2017-12-01,SKCHO
+//2017-12-01,SKCHO
+ 1.UPPER SHUTTLE MOVING ERROR 알람 발생 수정
+ 2.센서 감도로 인해 NG TRAY IN LIFT ARM  정보가 삭제 실패시 TR PUT 위치에서 한번 더 체크하여 삭제
+
+
+VERSION 2017-11-30,SKCHO
+//2017-11-30,SKCHO
+ 1. 메뉴얼 투입시 SENS5 알람 발생 방지
+
+
+VERSION 2017-11-28,SKCHO
+//2017-11-28,SKCHO
+ 1. MAIN UI에 RETRY 옵션 기능 추가(해당 유닛 색 변경으로)
+
+
+VERSION 2017-11-27,SKCHO
+//2017-11-27,SKCHO
+1. 컨베어 데이터 로봇으로 자동 이동
+  - LOADER ROBOT VAC 확인 후 CONV CELL정보 있고 실물 없으면 데이터 자동 이동
+2.DZONE TURN OFF RETRY 기능 추가
+3.DZONE VT FILE SEARCH FAIL RETRY 기능 추가
+4.통신관련 알람 설비 정지시에는 발생 안하게 수정
+5.TRAY ID없으면 보고 352,353보고 안하게 수정 / 보고 이력 있으면 보고 안되게 수정
+   - 352보고 후 m_strCloseTrayID 변수 초기화하고 352보고시 체크	
+        if(theProcBank.m_strCloseTrayID == _T(""))
+		{
+			return;
+		}
+	-353 보고는 m_strClose353TrayID 변수 초기화하고 	353보고시 체크	
+	   if(theProcBank.m_strClose353TrayID == _T(""))
+		{
+			return;
+		}
+6. 검사 파일 삭제 옵션 제거
+
+VERSION 2017-11-22,SKCHO
+//2017-11-22,SKCHO
+1. TRAY IN BUFFER -> IN 이동 후 5초안에 TRAY IN SENSOR5 CHECK 안되면 LOWER GUIDE FW ->1.0초->LOWER GUIDE BW 기능 추가
+2. TRAY OUT IN -> BUFFER 이동 후 5초안에 TRAYOUT SENSOR CHECK 안되면 LOWER GUIDE FW ->1.0초->LOWER GUIDE BW 기능 추가
+3. 알람명 틀린거 수정
+
+
+
+VERSION 2017-11-21,SKCHO
+//2017-11-21,SKCHO
+1. TRAY IN PORT SENSOR5 CHECK FAIL 이전에 FORWARD -> BACKWARD 동작 후 타임아웃되면 알람 발생
+2. TRAY TR GET에서 TOP센서 체크 시간 1초 딜레이 추가
+3. CStateLDRobotUpperPut::Run()에서 stepStart에 결과 체크 시간 1초 추가
+   CStateLDRobotLowerPut::Run()에서 stepStart에 결과 체크 시간 1초 추가
+
+4. unitfinetlock관련 버그 수정
+
+VERSION 2017-11-20,SKCHO
+//2017-11-20,YMG
+1. 셀 데이터 삭제 시 잔압이 남아 있어 BLOW를 불고 꺼줌
+ex) theUnitFunc.UpperShuttle_VacuumOn(VAC_OFF,JIG_CH_2);
+	Sleep(100);
+	theUnitFunc.UpperShuttle_BlowOff(JIG_CH_2);
+
+VERSION 2017-11-17,SKCHO
+//2017-11-17,SKCHO,
+1. PA TR VACUUM알람시 RETRY 기능 추가
+2. //2017-11-17,SKCHO, DZONE BLOWER ON - 기구작업 완료되면 적용 - AMTVACON함수에서 FPCB VAC 부분 주석필요
+
+
+
+VERSION 2017-11-16,SKCHO
+//2017-11-16,SKCHO, 
+1. AUTO KEY 돌리면 알람대신 설비 정지로, MTBI 요청
+
+
+VERSION 2017-11-15,SKCHO
+1. START BUTTON에 LOADER ROBOT에서 LOADER TR까지 버큠과 CELL 정보 비교하여 틀리면 메시지 출력하고 시작 안되게
+2. GOOD IN 하단 ALIGN GUIDE RETRY 기능 추가
+3. PA STAGE에 CELL이 모두 없을때만 PUT동작함(|| -> &&로 변경)(1개있을때 PUT 동작해서 CELL이 겹침 발생)
+   //&& (_func.CellTagExist(CELL_POS_PA_STAGE_CH1) == FALSE || _func.CellTagExist(CELL_POS_PA_STAGE_CH2) == FALSE)
+   && (_func.CellTagExist(CELL_POS_PA_STAGE_CH1) == FALSE && _func.CellTagExist(CELL_POS_PA_STAGE_CH2) == FALSE)
+4. CIM 버전 표시 추가			
+
+
+
+//-----------------자동화 관련 추가 내용-----------------//
+VERSION 2017-11-15,SKCHO
+VERSION 2017-11-01,SKCHO
+1. UNIT(채널) 인터락 관련 프로그램 수정
+   1)CIM 프로그램과 통신 구현 완료
+   2)unit interlock 1(normal case) 인터락 수신시 설비내에 있는 판넬 검사 완료 후 JIG SKIP 동작 구현 완료(unloader TR Get에서 jig skip 결정) - 테스트 진행 예정
+   3)unit interlock 2(pair unit 존재 case)  인터락 수신시 jig skip으로 상위 보고(2채널 동시 보고) 구현 완료 - 테스트 진행 예정
+     - 한개 채널 인터락시 jig skip으로 인터락 보고함
+   4)설비ui에서 unit 미사용 설정(unit pause) / 설비 ui에서 unit 사용 설정(unit run) 구현 완료 - 테스트 진행 예정
+   5)전체 unit interlock/pause 발생 상황 구현중
+   6)시스템에 의한EQP Interlock2(Loading stop) 구현 완료 - 테스트 진행 예정
+      - iothread에 설비내 cell 없음 판단 루틴 추가
+---------------------------------------------------------//
+
+
+VERSION 2017-11-09,JSJUNG
+1. 나찌로봇 시퀀스 변경
+  - SKIP(O),COMP RTN(X),ERR RTN(X), GET/PUT 컨디션 동작확인후 OFF
+  - 상단, 하단 채널1,2 지정 시퀀스 추가
+  EX)
+   //2017.11.09, JSJUNG. 어퍼스테이지 채널1 풋 신호 
+				theDeviceMelsec.RobotBitOn(LDROBOT_Y_UPPERSTGCH1PUT);
+2. 로드 로봇 셀 셔틀에 못 놔두고 오는 경우 있어 블로우 스텝 다음 스텝으로 이동
+
+
+3. 나찌로봇 히스토리
+  - 로봇 버전따라 SKIP,COMP RTN,ERR RTN 으로 이전에 테스트해봄
+   11월 9일 기준으로 26호기만 SKIP기능 만 추가한 버젼으로 사용하는데 알람 안뜨긴함
+   하지만 27호기 적용 하였을때 더많은 알람이떠서 횡전개는 무리라고 판단.
+   현재 로드 로봇만 기준으로 봤을때 전호기 같은 버젼이고 26호기(SKIP)만 다름
+
+  SKIP  = 로봇 프로그램 무한루프 진행으로 변경 함에 따라 반응없을시 스킵 시켜주는 기능
+	EX)
+	else if (m_Timer.Stop(FALSE) > 5. && m_Timer.Stop(FALSE) < 5.5)
+		{
+			theDeviceMelsec.RobotBitOn(LDROBOT_Y_SQSKIP);
+		}
+
+  COMP RTN = 추가하고 알람 걸릴때 추가해서 정확하지는 않으나 동작 완료후 시그널 ON / 효과 없음
+   EX)
+  	case stepRobotGet:
+		m_bRtn[0] = (BOOL)theDeviceMelsec.RobotBitRecv(LDROBOT_XY_CVGET);
+		if (m_bRtn[0] == FALSE)
+		{
+			theLog[LOG_SEQUENCE].AddBuf( _T("[%s] stepRobotGet"),m_strStateName);
+			//2017.10.31, JSJUNG. 퍼밋 시그널 오프
+			write = 0;
+			theDeviceMelsec.RobotWordSend(LDROBOT_PERMIT,&write,sizeof(long), FALSE);
+			theDeviceMelsec.RobotBitOn(LDROBOT_Y_SQCOMPRTN);
+			m_Timer.Start();
+			nStep++;
+		}
+
+  
+  ERR RTN = 추가하고 알람 걸릴때 추가해서 정확하지는 않음 시그널 ON / 효과 없음
+   EX)
+	  case stepPutCompChk:					// Wait Pos Check 후 End
+			m_bRtn[0] = (BOOL)theDeviceMelsec.RobotBitRecv(LDROBOT_X_UPPERSTGPUTCOMP);
+			if (IsReturnOk())
+			{
+				theDeviceMelsec.RobotBitOn(LDROBOT_Y_SQCOMPRTN);
+				theDeviceMelsec.RobotBitOn(LDROBOT_Y_SQERRRTN);
+				m_Timer.Start();
+				nStep++;
+				theLog[LOG_SEQUENCE].AddBuf( _T("[%s] stepPutCompChk"),m_strStateName);
+			}
+   
+
+
+VERSION 2017-11-08,JSJUNG
+1. AGV IN/OUT IDLE TIME 적용
+2. 로봇관련 비트 정리 
+
+VERSION 2017-11-06, YMG 
+1. GOOD IN LIFT, OUT LIFT, NG LIFT , TURN TABLE 서보 체크하여 ON 아니면 런 진행 못하게 예외처리.
+   - 라이트 커튼 감지 시 모터가 죽은걸 체크 하지 않고 런 돌려 무빙에러를 미연에 방지하고자
+   - ClickGxbtnStart()
+2. 램프 변경 시 비밀번호 설정.(m_strLampPassword)
+
+VERSION 2017-11-03,JSJUNG
+1. 트레이 비젼 시퀀스 추가
+2. OKOUTTray에 사용하는 Tray Align옵션 강제 False
+
+VERSION 2017-10-31,JSJUNG , 로봇TEST 실패
+1. 나찌로봇 시퀀스 변경
+  - SKIP(O),COMP RTN(0),ERR RTN(0)
+
+VERSION 2017-10-30,JSJUNG, 로봇TEST 실패
+1. 나찌로봇 시퀀스 변경
+  - SKIP(O),COMP RTN(X),ERR RTN(0)
+
+
+VERSION 2017-10-25,JSJUNG
+1. AZONE에서 셀정보 확인하고 디스플레이 레드변경 부분 삭제
+
+VERSION 2017-10-19,JSJUNG
+1. LD/UD 로봇 시그널 알람 및 속도 개선
+   - theDeviceMelsec.RobotBitOn(LDROBOT_Y_SQSKIP);
+
+VERSION 2017-10-17,JSJUNG
+1. MCR 5회이상 실패시 무한루프 문제 알람 처리
+2. BZone Contact / Recontact
+3. ContactNG Count 분리
+
+2017-10-07 해야할일
+1. AGV STOP TIME LOG표시 
+2. AGV로 인해  RUN 잰행 안될경우 AGV RUN DOWN 화면 표시
+   - good load port buff / in 에 tray가 없는 경우
+   - good unload port buff / in에 tray가 모두 있는 경우
+
+3. T5 자동 전원 리셋(전원 OFF/ON ) 기능(세가지 모드 기능)
+   1). 0-100시간까지 설정하게 하여 설정시간에 리셋
+   2). continue contact error가 뜨기전(5회 연속) 리셋(3회 연속 발생하면)
+   3). T5에서 먹통되었다고 신호가 오면 리셋
+
+4. T5 수동 전원 리셋 기능 셋업 화면에 추가(전원 OFF/ON)
+5. TACT TIME 감소를 위한 시퀀스 변경
+   1). CONTACT 결과 BZONE에서 받기
+   2). LOAD TR JIG 안착후 딜레이 시간 줄이기
+   3). 프리얼라인 TR 대기 위치 변경(조명때문에 불가능)
+
+6. DV LIST추가 - TMD INFO/ 불량명에 '_' 추가(완료)
+
+7. CIM REMOTE 끊김시 운영 RUN 진행 안되게
+8. 로봇 인터락 디버깅/ CELL ID FAIL 디버깅
+9. PRE ALIGN XY FIND FAIL 디버깅
+10. 73LINE CIM QUAL
+
+10월15일 테스트 변경점
+1. 한국시간 11시20분 /670매
+ m_bRtn[2] = (BOOL)theDeviceMelsec.RobotBitRecv(LDROBOT_XY_LOWERSTGPUT) == TRUE;	
+			if (m_bRtn[0] == FALSE || m_bRtn[2] == TRUE)
+1. 한국시간 11시40분 /820매
+        //m_bRtn[1] = m_Timer.Stop(FALSE) > 0.2 ? TRUE : FALSE;
+		//if(m_bRtn[1])
+ m_bRtn[2] = (BOOL)theDeviceMelsec.RobotBitRecv(LDROBOT_XY_LOWERSTGPUT) == FALSE;	
+			if (m_bRtn[0] || m_bRtn[2] )
+
+
+
+10월 13일 테스트 변경 점
+
+1. RCMD RECEIVE LOG 주석 12:39분
+2. theLog[LOG_SEQUENCE].AddBuf( _T("FALSE: DevNo %d)) 로그 주석처리
+3. case stepPutChk:			// Upper Stage Vac On
+		m_bRtn[1] = m_Timer.Stop(FALSE) > 0.2 ? TRUE : FALSE;  //딜레이 추가 13:23  1100개
+3.1 m_bRtn[1] = m_Timer.Stop(FALSE) > 0.3 ? TRUE : FALSE;  //딜레이 추가 0.3초로 변경 17:40  2900개	
+3.2 m_bRtn[1] = m_Timer.Stop(FALSE) > 0.2 ? TRUE : FALSE;  //딜레이 추가 0.2초로 변경 18:14  3200개
+		if(m_bRtn[1])
+		{
+
+		}
+
+4. DEV_TIME_OUT ->10
+short CCIF32Ex::ExchangeIO(void* pSendData, USHORT sSendSize, void* pRcvData, USHORT sRcvSize)
+{
+	return ::DevExchangeIO(IO_BOARD_NO, SEND_OFFSET, sSendSize, pSendData, READ_OFFSET,  sRcvSize, pRcvData,10 /*DEV_TIME_OUT*/);
+}
+
+VERSION 2017-10-17,JSJUNG
+1. //20171017 JSJUNG, MCR 5회이상 실패시 무한루프 문제 알람 처리
+
+VERSION 2017-10-16,JSJUNG
+1. //20171017 JSJUNG, 지그별 컨택 NG count로그 저장
+2. m_JigContactNGcountMAX 값 변경.m_JigContactNGcountMAX 는 5 * 3 = 15, 처음 컨택 1, 재컨택 할 채널 체크 1, 재컨택 체크 1; 
+3. //2017.10.16, JSJUNG. BZone Contact / Recontact 추가 및 변경.
+4. //2017.10.17, JSJUNG.ContactNG Count 분리
+
+VERSION 2017-10-14,JSJUNG
+1. 얼라인 가이드 FWD시 DCR 안정위해 0.5초 딜레이
+	case stepDCRTriggerON:
+			m_bRtn[0] = AlignCylFwdBwdChk(GOOD_IN_TRAY_PORT, CYL_FWD);
+			m_bRtn[1] = DivisionCylFwdBwdChk(GOOD_IN_TRAY_PORT, CYL_FWD);
+			if(IsReturnOk() && m_Timer.Stop(FALSE) > 0.5) //2017.10.14, JSJUNG, 얼라인 가이드 FWD시 DCR 안정위해 0.5초 딜레이
+
+2. START버튼 클릭시 D ZONE에 셀이 없고 정보만 있고 ULD TR에 셀은 있고 정보는 없을 경우 경고창 띄움
+
+	if(theUnitFunc.CellTagExist(CELL_POS_DZONE_CH1) && !theUnitFunc.CellTagExist(CELL_POS_UD_TR_CH1) //2017-10-13 JSJUNG D존 베큠 에러 예외처리
+		&& theUnitFunc.GetInPutIOState(X_ULD_TR_CH1_VAC_SEN) && !theUnitFunc.GetInPutIOState(X_D_JIG_CH1_VAC_SEN))
+
+3. TEMP 관련 초기화값 0->24로 변경 / 24도 미만 28 도 이상일시 24도로 보고
+			if(dValue < 23 || dValue >= 28)
+			{
+				theFDCBank.m_dLoad_Temp = 24;
+			}
+			else
+			{
+				theFDCBank.m_dLoad_Temp = dValue;
+			}
+
+
+VERSION 2017-10-13,SKCHO
+//2017-10-13,SKCHO
+1. UPPERSHUTTLE SIGNAL ALARM / LOWERSHUTTLE SIGNAL ALARM 전에 1.5초 이상 신호가 없으면 
+		theDeviceMelsec.RobotBitOn(LDROBOT_XY_UPPERSTGPUT);
+		theDeviceMelsec.RobotBitOn(LDROBOT_XY_LOWERSTGPUT); 신호 한번 더 셋한다.
+
+2. 옵션 화면에서 FALSE -> TRUE로 수정
+void CFormOptions::ClickGxbtnMcrCompchk()
+{	
+	//2017-10-13,SKCHO
+	//theProcBank.m_bUpperMCRCompChk =FALSE;
+	theProcBank.m_bUpperMCRCompChk = TRUE;
+}
+3. RCMD DELAYTIME : 0.5->0.1로 수정
+4. 컨베어 속도 5->10으로 수정
+5. 컨베어 대기 시간 0.2초 삭제
+
+VERSION 2017-10-09,SKCHO
+//2017-10-09,SKCHO
+1. 프로그램 시작 시 OK OUT BUFF PORT에 트레이가 있고, 트레이 정보가 없으면
+    ALARM_OKTRAY_OUT_BUF_CONV_TRAY_CHK 발생 삭제하고 자동으로 트레이 정보 생성하고 352보고로 변경
+
+2. CARRIER REPORT TIMEOUT 발생시 CarrierResult 파일 검색해서 결과값 읽어 온 다음 없으면 알람 발생
+   - 3012,3011,3010 알람 발생 방어코드
+
+3.TMD INFO 요청함
+	- A_Zone_TMDInfo(JIG_CH_1);
+	- A_Zone_TMDInfo(JIG_CH_2);
+
+VERSION 2017-10-07.1
+//2017-10-07,SKCHO 
+1. MAINFORM에서 GetInPutIOCheck()함수 대신 GetInPutIOState()함수 사용
+   - MAINFORM에서 사용하는 INPUT_IO값을 스레드에서 읽어서 버퍼에 저장하고
+     MAINFORM에서는 버퍼 변수를 참조하여 디스플레이한다. -> VACCUM, AGV, SENSOR 표시 기능
+
+23일 테스트 변경 포인트
+1.LDCONV3 9->9.9초
+2.온도 통신 명령 시간 0.2->1초
+3. AGV 요청 로그 주석(FORMMAIN) 15시10분적용
+4.2390매진행중
+
+56호기 로봇 알람 발생하여(원점 기동으로 조치하고)런 진행함 - 12:20분 조치
+
+해야할일
+1. 프리얼라인/VISION  마크 찾기 버튼 및 retry (5초대기후)기능 추가
+2. TMD RESET기능 추가
+3. 24-1버전 테스트
+4. AGV 테스트
+
+VERSION 2017-09-26.1
+//2017-09-25,SKCHO, 
+1. DV 추가 건 수정
+   - 좌표에 쉼표(,)를  (_)로 수정 - 자동화 요청
+2. JOB PROCESS에서도 RETRY 기능 추가
+
+
+VERSION 2017-09-25.1
+//2017-09-25,SKCHO, 
+1. 화상검사 결과 파일 삭제,CELL ID가 같으면 잘못 보고할 수 있음
+   UINT LoadVTFileThr(LPVOID lpParam) 함수에 ::DeleteFile(szFileName);추가
+2. 프리얼라인  RETRY 기능 추가
+3. 프리얼라인 MANUAL SEARCH 기능 추가(프리얼라인 티칭 화면)
+4. OUTLIFT SENSOR에 트레이가 없을때 LIFT UP을함 (OUT BUFFER에 트레이가 있을경우 트레이가 다시올라와 충돌함 방지)
+	int CStateGoodTrayOutLift::Run() m_bRtn[1] = ULDTrayLiftTrayChk(SENSOR_OFF);
+
+VERSION 2017-09-24.1
+//2017-0924,SKCHO
+1. CELLINFO/ JOB PROCESS 결과  CIM프로그램에서 파일로 저장하면 타임아웃시간에 읽어와서 다시 확인
+2. vision 결과 파일에서 REJECT 결과 트랙아웃시 DVNANE,DV로 보고 추가
+3. 프리얼라인모터 타입  STEP ->EZSERVO로  바꿈
+
+VERSION 2017-09-21.1
+//2017-09-21,SKCHO
+1. GOODTR, NGTR GET에서 버큠 알람 발생시 Retry 1회 시도 기능 추가
+2. AUTO/TEACH키 상태 표시
+
+VERSION 2017-09-19.1
+1. JIG SKIP 시 사유 표시되게 기능 추가
+2. CELL INFO나 CARRIER INFO TIMEOUT 발생시 1회재시도 및 TIMEOUT시간 옵션처리
+3. ULD TR 재시도 및 가감속 기능추가 (옵션처리)
+
+
+VERSION 2017-09-17.1
+//2017-09-17,SKCHO, 
+1.ERROR/IDLE LOG 파일열려 있을때 로그 쓰면 죽는 현상 방지
+2. 물류 MCR 리딩 알람 카운트 정지(완료)
+ - 연속성 5회(변수) 알람 발생
+ - 즉 조치 불가 시 스킵 모드 설정하고, UI MCR 1번 스킵 표기
+
+3. 언로더부 트레이 투입 C/V 자동 구동(완료)
+ - Request + 투입 Sensor 타이머 3s 감지시 C/V 자동 구동(트레이 도착 위치까지)
+
+VERSION 2017-09-16.1
+//2017-09-16,SKCHO
+1. pre align 실패시 1회 재시도
+
+VERSION 2017-09-14.2
+//2017-09-14,SKCHO
+1. VAC 상태 메인 화면 표시
+2. CELL ID 이동 화면 표시
+3. 용량 큰 로그 시간별로 나눔
+
+VERSION 2017-09-12.2
+//2017-09-12,SKCHO
+- 임의 추출과 셀정보 삭제 메시지 구분
+- RESTART에서 LOAD CONV에 셀 정보 있고 센서에  감지가 안될 경우 셀 정보 삭제
+
+VERSION 2017-09-12.1
+//2017-09-12,SKCHO
+
+1. 언로더 트레이 램프 점등 기능(완료) 
+    - OK, NG 트레이가 없을 경우(언로딩 - 로딩까지 설비 미 동작 시) 언로더 경광등 램프( 초록 > 앨로우 변경)
+    - 트레이 없는 메시지 UI 표시(OK 버튼 누릴시에도 트레이 투입 까지 램프 미 변경)
+2. 투입 컨베이어 인터페이스 자동 리셋(완료)
+3. 존 스킵 UI 표시 기능(완료)
+4. 지그 vac 시퀀스 변경(미 적용 테스트 진행 가능 일정: Vision 프로그램 적용과 동시 진행 예정) 
+5. 에어 블로워 타임 변경 0.5(V9.5)
+6. 타임 17분(AGV Request 미 도착 시 경광등 점멸), AGV 리셋 (완료)
+
+VERSION 2017-09-06
+//2017-09-06,SKCHO
+1. LD CONV SEN3 ALARM시 10초후 COMPLETE ON -> 1초Delay -> COMPLETE OFF- > 1초 Delay
+    하여 앞설비 신호 초기화 함(LDCONVSEN3 ALARM 없앰)
+
+
+VERSION 2017-09-02
+//2017-09-02,SKCHO
+1. LDTRAPUT에서 BLOWER OFF 후 LD TR X PA Cell Load위치로 이동.
+
+VERSION 2017-08-31
+//2017-08-30,SKCHO
+1.AGV PIO 신규추가
+  - UI화면에 ABORT /LOADING/UNLOADING 추가
+  - AGV 시퀀스에 TIME OUT 추가
+  - AGV 투입 요청 후 일정시간 지나도 오지 않으면 경광등 및 부저 발생
+    - AGV 경광등 전용 UI 추가
+  - 램프 상태 변경 함수 수정(부저번호 추가)
+  - AGV TIMEOUT 메시지 박스 추가
+    OK:경광등 이전상태로  CANCEL: 메세지박스만 숨김
+
+2. FDC 항목 평균값 사용하여 보고
+  - GMS / MAIN AIR,VAC/ ULD TR, STAGE / 전력량계 값 평균값을 사용하여 보고함
+  - 상한 / 하한값 벗어나면 디폴트값으로 함.
+  - OPTION.INI에 상/하한값 저장하고 불러오기 추가
+//2017-09-01
+4. BCR  재연결 버튼 추가
+
+
+VERSION 2017-08-22
+//2017-08-22, KAKAKA
+   1.  AGV DELAY INTERFACE 부 삼성 요청 사항 소스작업. 
+    - 양산 대응하면서 소스를 짰는데 잘 맞나 모르겠습니다. 정신이 없어서 개판으로 짠듯....
+	- 기본적으로 옵션 창에 5,10,20,30분 딜레이 옵션 추가 함. (config  저장)
+	- 스레드 펑션에서 시간 딜레이 체크 하고 타워램프 초록색 노란색 점멸등 지시.
+	- 기존 GOOD IN 부저 함수를 딜레이 부저로 만들어 추가 하고 GOOD OUT 조건 추가함.
+	- 테스트 할 여건이 안되어 테스트 못하고 예상으로 소스만 짬. 수정 많이 해야 할 듯. 죄송합니다 ㅜㅜ
+
+
+
+VERSION 2017-08-14
+//2017-08-14, KAKAKA
+   1.  가과장 요청사항 NG쪽 LIFT 센서들이 둘중 하나만 되도 쓸수 있게 셀렉트 옵션을 만들어 달라 함. 
+    - 짜증이 났지만 NG IN, OUT 나누어 옵션 생성.
+	- 귀찮고 가과장 욕하고 싶었지만 센서까지 1,2 나누어 옵션 생성.
+	- 정말 안해주고 싶었지만 설정 기억할수 있게 옵션 ini 파일 기록 함께 저장 및 불러오기 포함.
+	NG IN SEN1, NG IN SEN2, NG OUT SEN1, NG OUT SEN2 ON<->OFF
+
+
+VERSION 2017-08-02-1
+//2017-08-02,JSJUNG
+   1.  preload abnormal case 관련 
+    - 장비 상태 변경이 있을경우 GOOD IN BUFFER가 비었을때는 350보고
+	- 장비 상태 변경이 있을경우 GOOD OUT BUFFER에 트레이가 있을때는 352보고
+
+VERSION 2017-08-01-2
+//2017-08-01,JSJUNG
+   1. preload abnormal case 관련_ GOOD LOAD BUFFER 
+	- 트레이 넣을때 센서보고 15초후 컴플리트 및 뮤트 오프 / 정보생성 및 상위보고(351)
+	- 트레이를 강제로 뺏을 경우에는 바로 정보 삭제 및 상위보고(350)
+	- 트레이 리프트업 262 보고 전까지는 350 보고 안함
+	- agv쪽 동작시는 테스트 필요함
+   2. preload abnormal case 관련_ GOOD UNLOAD BUFFER 
+    - 트레이 아웃 버퍼에 센서 감지되고 정보가 없을 시는 알람.
+	- 트레이 아웃 버퍼에 트레이가 있다가 리퀘스트 누르고 트레이만 뺏을때 10초후 자동 컴플리트
+	- 자동 컴플리트 할때 353보고
+	- agv쪽 동작시는 테스트 필요함.
+
+VERSION 2017-08-01-1
+//2017-08-01,JSJUNG
+  1. 지그별 컨택 실패시 카운트하여 3회 이상일때 알람 발생 수정(알람 플래그 초기화/재컨택때문 NG숫자 MAX 6으로 변경)
+  2. 강제 OK 했을경우 검사결과도 GOOD / 상위보고도 "G" //고객사 김종오 과장 가끔 야간에 요청이 있어서 추가함.
+
+VERSION 2017-07-30-1
+//2017-07-30,JSJUNG
+  1. 지그별 컨택 실패시 카운트하여 3회 이상일때 알람 발생. 지그별 컨택 NG count/3회 지정 <-추후 3회는 옵션 처리예정
+  2. TPM_LOSS 코드 추가(LOSSTIME2 화면)
+  3. 프리얼라인 실패시 알람 나도록 수정 : 셀 유무 체크 하고 GOOD일때만 정상동작
+
+VERSION 2017-07-29-1
+//2017-07-29,JSJUNG
+  1. 얼라인 후 감지 무시 ALARM_OKTRAY_IN_TOP_TRAY_CHK 에러 많이나서 막음
+
+VERSION 2017-07-28-1
+ //2017-07-28,JSJUNG,
+  1. TEACH 상태에서 문열리면 알람 울려서 수정 (X_TEACH_KEY_SW) == FALSE->TRUE)
+
+VERSION 2017-07-24-1
+ //2017-07-24,JSJUNG,
+  1. DD모터 로그 추가.
+  2. 언로드 TR UP 동작전 강제 1초 추가
+  3. GOOD TRAY OUT BUFFER에 정보 생성시 352보고 추가(AGV 호출용)
+
+ 
+ VERSION 2017-07-22-1
+  //2017-07-22,JSJUNG,
+  1. 인터락 문제로 인하여 INSTANTANEOUS_POWER 3이상 값은 무시_고객사요청
+  2. 에어 및 베큠값 인터락 문제로 인하여 스펙 벗어나는 값은 무시_고객사요청
+  3. GDCLDNG시 "O" 코드 보고. 고객사 검사부 요청
+  4. 수동조작 GOOD ULD TRAY 리프트 상승시 충돌 예방
+  5. GMS 999* 일때 저장 되는 부분. 저항값 아닌데 왜 저장되는지?? 삭제
+
+  VERSION 2017-07-20-1
+  //2017-07-20,JSJUNG,
+  1. 설비 IDLE TIME : IDLELog.csv 에 저장
+  2. ALIGN_RESULT_SKIP 일때 무한 정지 발생 버그 수정  //2017-07-20,SKCHO, 
+  3. GOOD OUT LIFT 삭제 시 GOOD IN ALIGN 카운트/ 트레이 정보 도 초기화
+  4. GOOD IN ALIGN DIVISION 사용 유무 옵션 추가
+  5. GOODTRPUT END 시점으로 이동(배출 시점에서)
+     -theProcBank.m_bCarrierReportWaitCheck = FALSE;
+	 - theProcBank.ResetSubGoodAlignCount();
+
+ - 가온누리에 트랙인/아웃 카운트 표시(0)
+ - 임의추출 로그 표시 - LOG_CIM에 TRACKOUT_MANUAL로 표시(0)
+ - 상류설비/AGV 딜레이 시간 리포트 기능 및 화면 추가
+
+  VERSION 2017-07-17-2
+  //2017-07-17,SKCHO,
+  1.기존 302보고 조건을 변경 트레이가 리프트센서에 감지 안될 경우에만 으로 변경
+  2. EQUIP_SET_PORTSTATECHANGE_REQUEST 추가에 따른 상태 보고 시점 시퀀스에 적용
+     - LIGHT CURTAIN / AGV 시퀀스에서 발생하는 알람에서만 254보고를 하게함.
+
+   VERSION 2017-07-17-1
+  //2017-07-17,SKCHO, 
+  1. LOAD CONV에서 셀 정보 생성할때 CREATECELLINFO함수로 생성하고 함수 내부에서 CELLINFO클래스 초기화 해줌
+  2.TAG 배열크기 MAX_CELL_INFO_BUFFER 1000->50으로 변경함
+  3. 셀정보 삭제 버튼에 theCellBank.RemoveCellTag(CELL_POS_LD_CONV); 를 삭제하고	theCellBank.RemoveCellTagCellInfo(CELL_POS_LD_CONV); 로 대체
+  4. 302 마지막 CELL 보고 GOOD IN LIFT센서가 감지 안되면 보고 하게 함.- 302보고 시점 이동 1LOT이 다 끝나면(들어온 TRAY가 센서에 감지 안되면)보고
+  5. GOOD IN BUFFER에 트레이가 들어오면 351보고에  트레이 ID정보에 PRELOAD로 보고함
+     - 포트번호 4로 하여 351보고 함, GOOD IN COMP 버튼 또는 AGV로 받았을때 보고
+
+
+  VERSION 2017-07-15-1
+  //2017-07-15,SKCHO, 
+  1.환경안전 추가 요청(리프트가 올라간뒤 뮤팅램프 켜지게)
+    - int CStateGoodTrayOutLift::Run()에 case stepLiftUpChk: 스텝 추가
+
+  2.  LOWER MCR에서 실패하여 UPPER MCR에서 읽기 전에 A ZONE에 있는 CELL 정보를 지우면
+	  theProcBank.m_bUpperMCRCompChk = FALSE상태가 되어 LOADER TR이 GET 위치로 이동하지 않는다
+	- 옵션에  theProcBank.m_bUpperMCRCompChk = TRUE해주는 버튼 축가
+
+  3.OUTLIFTPITCH DOWN 1.5->1로 수정
+
+
+
+
+  VERSION 2017-07-14-1
+   //2017-07-13, SKCHO,
+ 1. 런중에 티치 키 오토에서 티치모드로 변경시 알람 후 멈춤 추가.(가충현과장 요청사항)
+ 2. DRY RUN 시 Dcr 스킵되게 추가 - DcrChk()함수내에 return TRUE추가
+ 3. REJECT에 퍼센트율 추가
+ 4.
+   //2017-07-15,SKCHO, 임의 추출시 셀 정보를 삭제시 사용
+   //임의 추출하여 셀 태그를 지우나 셀 정보 변수는 초기화 되지 않아 다음 태그 인덱스로 오면 트랙인 플래그가 초기화 안되어 트랙인 하지 않는 경우 발생
+   CCellTag CCellBank::RemoveCellTagCellInfo( CELL_POS pos )
+
+  VERSION 2017-07-11-1
+ //2017-07-11, SKCHO,
+ 1.262상위보고 실패시 트레이 추출 및 정보 삭제 안하고 재시작할(작업자 실수로) 경우 카운트가 2가되어 262보고 안됨
+	theProcBank.MinusSubGoodAlignCount();
+	theProcBank.MinusGoodAlignCount();
+ 2. EQUIP_SET_PORTSTATECHANGE_REQUEST,  PORT STATE CHANGE 추가
+
+ VERSION 2017-07-10-1
+ //2017-07-10,SKCHO,
+ 1. 계속m_bTeachMoveComplete = TRUE가되어 다른 서보 동작시 문을 열어도 멈추지 않음(환경안전 요구사항)
+	 if(theProcBank.m_nPresentAxis == AXIS_SVO_TURN_TABLE_T)
+ 2.TRAY ID 자릿수 30으로 고정함
+
+
+ VERSION 2017-07-08-2
+//2017-07-08,SKCHO
+ 1. DCR읽기실패하여 트레이를 메뉴얼로 전부 배출했을 경우 다시 시작하면 m_bDCRChk = FALSE상태이므로 DCR 읽기 동작을 계속하게됨 방지
+	메인화면 트레이 리프트 트레이 정보 지울때	theProcBank.m_bDCRChk = TRUE;
+
+
+ VERSION 2017-07-08-1
+//2017-07-08,SKCHO
+ 1.UNLOADER PORT MUTING 램프 ON 일때는 UNLOADER부(AXIS_SVO_GOOD_TRAY_OUT_LIFT_Z - AXIS_SVO_NG_TRAY_TR_Z) 모터만 안 움직이게 수정
+    - AGV 반송시 뮤팅이 켜져 있고 다른 모터에서 알람이 발생하면 모터 구동이 안되어 처리 안됨
+	- UINT IOCheckThr( LPVOID lpParam )	/ ClickBtnMove()
+ 2. AGV PIO 로그 기록 추가
+ 3. 통신데이터가 100개 일경우 프로그램 다운 개연성 있어 아래로 이동 buf[nReciveLength] = NULL;
+
+VERSION 2017-07-07-2
+//2017-07-07,SKCHO
+1. 첫번째 LOTEND 이후 GOOD OUT BUFFER 포트에 트레이가 있는 상태에서 ,두번째 LOTEND 진행 후,  첫번째 LOTEND 트레이를 GOOD OUT BUFFER 포트에서 트레이 뺄경우 첫번째, 두번째 352,353 보고에서 트레이 ID가 중복되는 버그
+    - 352,353 보고용  TRAY ID 변수 추가
+
+2. 1 Lot(예 tray 10개) 기준 한번 262보고 함,
+  1) GoodAlignCount변수 초기화 위치 변경 -> GOOD IN ALIGN에 TRAY가 없어 하단 위치로 내려가면 GoodAlignCount 초기화
+ 예제: TRAYIDQTY 1로 설정하고 
+   트레이 10개 삽입 -> 얼라인 -> 262보고 -> 301보고->CELL 8개채우고->302보고 -> 260보고 ->260보고(TRAY2개배출)
+   ->ALIGN->TRAY ID읽고-> 262보고 생략 ->  CELL채우고-> 260보고->260보고(TRAY2개배출)
+  2) 1 Lot 진행 중 262보고 생략하기 위해서 SubGoodAlignCount 변수 추가 (262보고는 GoodAlignCount가 1일때만한다)
+
+VERSION 2017-07-06-1
+1. DCR 옵션 삭제(고객사 요청- 성열태프로) //2017-07-06,SKCHO
+2. TP CODE 품질 점검코드 버그 수정 15100-> 15200 으로 버그 수정
+    #define LOSS_MSG_BM2_3	_T("PM>15200>품질점검>품질점검>Quality Check>Kiểm tra chất lượng")
+
+VERSION 2017-07-04-1
+ 1.BZONE에서 얼라인 데이터를 두번 전송하여 첫번째 전송 삭제함 // 2017-07-04,SKCHO, 
+  //--B_Zone_Align_Grab(JIG_CH_2, TRUE);		//Align  request
+ 2.351보고시 현재 읽은 TRAY ID로 보고함 // 2017-07-04,SKCHO, 
+  - 351보고 시퀀스 앞에 theProcBank.m_strTrayOpenRelease = theProcBank.m_strTrayID;를 추가하고 이전 시퀀스 는삭제
+ 3. AGV TC 상태 표시 UI 화면 추가 // 2017-07-04,SKCHO, 
+ 4. Version 숫자 누르면 Version history 화면 나타남 // 2017-07-04,SKCHO, 
+    - Version histroy 다이얼로그 추가
+
+ 5.트레이 정보 삭제시 로그 남도록 추가
+
+ 6.트레이 정보 생성 및 트레이 ALIGN 카운트 증가 위치를 inpitch 함수에서 dcr 읽는 함수로 변경함// 2017-07-04,SKCHO, 
+    - dcr읽기 실패하여 트레이를 바꿀 경우 트레이 정보를 지우는데 그때 카운트까지 초기화 되어 상위 보고가 이상하게 됨
+	  따라서 읽기가 실패해도 트레이 정보를 지우지 않아도 되게 함.
+
+VERSION 2017-06-22-1
+ 1. Tray Align NG일 경우 확인만하고 다음 스텝 //2017-06-22 JSJUNG.
+ 2. LOWERSHUTTLE이동시 로봇 어퍼셔틀 위치의 움직임 무시 //2017-06-22 JSJUNG.
+ 3. Carrier Report 알람 세분화 /2017/06/22 HSK.
+ 4. 릴리즈 보고 할 경우에는 설비 경알람이 아닌 중알람으로 띄운다. /2017/06/22 HSK.
+
+
+VERSION 2017-06-21-2
+1. AGV Receive 시퀀스 변경
+ - Conv Stop과 스토퍼 다운 같이하면 컨베억 좀더 굴러서 들어가 버리기 때문에 따로 뺀다. 2017/06/21 HSK.
+2. Carrier 리포트 결과 못받거나 페일일 경우에 계속 경알람 발생 하던거 수정.
+ - DCR 결과 보고 실패해도 경알람 후 그냥 진행 하려면 TRUE 2017/06/21 HSK.
+3. 350 보고 시점 추가.
+ - 리퀘스트 FALSE해줘야 350보고가 발생한다 2017/06/21 HSK.
+ - 버퍼에 트레이 들어온걸 지워버리면 350 보고를 다시 해준다 2017/06/21 HSK.
+4. Tray Align 수정.
+ - 스텝을 정의 안해줘서 문제가 있었을 수도. 2017/06/21 HSK.
+
+VERSION 2017-06-20-1
+1. 로봇 메뉴얼 모드 추가.
+ - FormTeachLDRobot,FormTeachUDRobot 전체적으로 수정.
+ - 메뉴얼 모드 오프 해준다. 2017/06/20 HSK.
+ - 메뉴얼 상태 확인 비트 추가 2017/06/20 HSK.
+ - 혹시 몰라서 스타트 할때 메뉴얼 모드 꺼준다 2017/06/20 HSK.
+
+2. IDLE변경 시점에 따른 수정.
+ - IDLE 변경 시간 바뀌면서 적는 곳도 바꺼준다. 2017/06/20 HSK.
+ - IDLE 변경되는 시점도 로더 로봇 체크 한다 .2017/06/20 HSK.
+
+VERSION 2017-06-19-1
+1. AUTO CONTACT JIG 별 COUNT 수정.
+
+VERSION 2017-06-18-1
+1. AUTO CONTACT JIG 별 COUNT 화면 추가
+  - 2017-06-18 JSJUNG, JIG CONTACT COUNT 추가
+2. 얼라인 티칭시 확인 후 비밀번호 한번더 확인시 CANCLE 할 경우 저장되는 부분 수정
+  - 2017-06-18 JSJUNG. 비밀번호 다이얼로그에서 cancle 시 티칭값 저장되는 부분 막음
+
+VERSION 2017-06-17-1
+1. 설비 상태 상위 보고 관련 수정.
+ - 앞단 설비에서 셀받는 부분을 설비 RUN과 관계 없이 진행 해서 설비가 멈춰 있는 경우에 CELL이 LD CONV까지 오는 경우가 생기는데
+   설비가 IDLE에서 알람이 난 상태 였는데 셀이 들어오고 설비 스타트를 하면 설비 상태가 RUN으로 바로 바뀌어 버리는데 이때
+   AVAILABILITYSTATE가 1에서 2로 안바뀐다. 때문에 설비 RUN으로 바꾸는 타이밍을 로더 로봇이 셀을 집고 난 후로 변경 한다. 2017/06/17 HSK. 
+ - 설비 Run으로 바뀌는 시점을 로더 로봇이 집고 난 후로 바꾼다. 2017/06/17 HSK.
+ - 멈췄다 진행시에 LD CONV에 셀이 있어도 IDLE이므로 여기서 RUN으로 바꺼준다. 2017/06/17 HSK.
+ - 내가 넣었는데 자동 RUN으로 바껴야 할 경우가 있나 모르겠다... 주석 한다 2017/06/17 HSK.
+2. DCR아이디 타임 아웃 나도 정상 진행.
+ - 결과를 못받을 때도 경알람이며 설비는 진행. 2017/06/17 HSK.
+
+VERSION 2017-06-16-1
+1. TMD DownLoad관련 수정.
+ - 잡파일 다운로드가 아닌 통신 상태가 변경 되었을때 타이머가 죽어버리는 현상 수정 2017/06/16 HSK.
+ - UI 상에 애매한 색으로 멈춰버린다 원래 색으로 바꺼주자 2017/06/16 HSK.
+ - 설비 런중에는 다운로드 못받도록 한다 2017/06/16 HSK.
+ - PG 끊어져도 상태 갱신 2017/06/16 HSK
+ - TMDCHECK명령에 CHECK가 들어가 있어서 해당 부분 주석 한다 2017/06/16 HSK.
+ - TMD 다운로드가 끝나고 다시또 다운로드 하는걸 막는다. 2017/06/16 HSK.
+2. 티칭 및 조작 인터락 수정
+ - 얼라인 티칭시 확인 후 비밀번호 한번더 확인 2017/06/16 HSK.
+ - 알람 및 통계 화면을 제외하고 다른 페이지는 엔지니어 로그인 후에 들어 갈수 있다 2017/06/16 HSK.
+3. Cell Log 정합성 수정.
+ - AZone Cell Loading Current 항목에 이상하게 기록되는 버그 수정 2017/06/16 HSK.
+4. 심퀄 요구사항
+ - 2017-06-16,JSJUNG. 심퀄요청- 레시피 다운로드 사용안함 NAK보고
+
+VERSION 2017-06-15-1
+1. 리젝 코드 상위 보고 옵션 처리.
+ - 리젝 코드를 L에서 R로 바꺼달라는데 나중에 또 바꿀 영향이 있어 옵션 처리. 2017/06/15 HSK.
+ - 상위로 보고 하는 불량 L Or R 2017/06/15 HSK.
+2. 심퀄 요청 사항
+ - 심퀄 요청사항 - 장비 상태 보고시 AVAILABILITYSTATE 가 1에서 2로 변경되지 않는 부분이 있어서 추가 2017/06/15 JSJUNG.
+ - 레시피 불러 들일때 Teach 파일 없을 경우에 해당 모델 삭제 한다. 2017/06/15 HSK.	
+ - 상위에서 내려 줄때도 중복 방지. 2017/06/15 HSK.
+ - 상위 보고 할지 말지는 협의를 해봐야 할 것 같은데....2017/06/15 HSK.
+ - 레시피 창에서 변경 가능 하도록 수정. 2017/06/15 HSK.
+3. 검사 시작 명령 옵션 추가.
+ - 그랩 모드 변경 옵션 추가 2017/06/15 HSK.
+4. D Zone 검사 종료 체크 시퀀스 부분 수정.
+ - 여기서 인스펙션 스킵 하면 다음 스텝에서 문제가 된다.여기서 알람 뜰거면 다음 스텝에서도 알람 뜨니 여기는 우선 넘어가자. 2017/06/15 HSK.
+5. AGV 부저 동작.
+ - AGV가 트레이 줄때도 부저 꺼준다 2017/06/15 HSK.
+ - AGV가 받아 갈때도 부저는 꺼준다 2017/06/15 HSK.
+6. OutLift 스토퍼 동작 부분 수정.
+ - 컨베어랑 같이 동작 하니 트레이가 밀려서 앞으로 나가서 라이트 커튼 감지 한다. 2017/06/15 HSK.
+
+VERSION 2017-06-13-1
+1. 검사 시작 명령 변경.
+ - Cell ID 추가 해서 보내 달라는 요청 2017/06/13 박용학책임.
+2. 레시피 버그 수정.
+ - 레시피 버그 수정. 2017/06/13 HSK.
+
+VERSION 2017-06-12-2
+1. 심퀄 수정 사항.
+ - U -> UI01로 변경. 2017/06/12 HSK.
+ - 트랙인 RMCD체크 완료 후에 RCMD CH 구별 플래그 오프 2017/06/12 HSK
+ - 연결 될 때 마다 트레이 정보 체크 해서 보고 . 처음 켰을 때 없어서... 2017/06/12 HSK.
+ - 타임 아웃일 경우에도 검사 스킵 처리 2017/06/12 HSK.
+ - 
+VERSION 2017-06-12-1
+1. 잡파일 다운로드 신호기에서 바로 하지 않고 운영에서 한걸 가져 가도록 수정.
+ - 잡파일 다운로드 정보 읽을때 운영으로 해당 파일 복사하여 놓는다. 신호기에서 해당 파일 복사하도록 한다. 2017/06/12 HSK.
+2. 드라이 런중에는 상위보고 하지 않도록 수정.
+ - Dry Run중에는 상위 보고 안한다... 2017/06/12 HSK.
+
+VERSION 2017-06-11-1
+1. 메인 화면에 EQID 추가.
+ - 메인 화면 탑에 EQID 보여지도록 수정 2017/06/11 HSK.
+2. Cell Info Request 요청 시퀀스 변경 했던거 다시 원복.
+
+VERSION 2017-06-10-1
+1. 설비 런 진행 버튼 클릭 시 얼라인 프로그램 라이브 모드 끄도록 수정.
+ - Live 모드로 해놓고 끄지 않는 경향이 있어 운영에서 스타트 할 때 끄도록 해준다 2017/06/10 HSK.
+2. Config에 있는 양품 트레이 수량은 사용 하지 않아서 보이지 않게 한다.
+3. UpperMCR도 딜레이 타임 적용되도록 수정.
+
+VERSION 2017-06-09-1
+1. Cell Info Request 중복보고 안하도록 수정.
+ - Cell Info Request를 계속 트랙인으로 물어 본다... 한번만 보내자 2017/06/09 HSK.
+2. MCR Delay Time 옵션 추가.
+ - Lower MCR Delay Time 설정 추가 2017/06/09 HSK
+3. Load Pitch In 옵션 UI 추가.
+ - Load Pitch In 이동 옵션으로 추가. 2017/06/09 HSK.
+4. CellRcvThr 및 AGVInterfaceThr에서 설비 상태 체크 안하게 끔 변경. 알람이 나면 쓰레드가 살아서 동작 하는줄 알았는데 Restart 체크 부분에서 막혀있었음.
+ - 프로그램 시작 초기화 체크 안했더니 초기화 및 설비 상태 체크 안하는 쓰레드에서 너무 빨리 신호 체크 해서 프로그램 죽는다 2017/06/09 HSK.
+ - 설비가 멈추면 해당 부분에서 Continue 되서 따로 동작이 안된다 2017/06/09  HSK.
+ - 설비 정지 상태에서도 셀이 들어오기 떄문에 아이들 상태에서만  Run으로 변경 한다 2017/06/09 HSK.
+
+VERSION 2017-06-08-3
+1. 모터 리스트에서 원점 잡는도중에 문열시에 모터 정지 및 알림. 환경 안전.
+ - Setup 탭에서 모터 원점 잡는 도중에 모터 열림 체크 변수 2017/06/08 HSK.
+
+VERSION 2017-06-08-2
+1. 정지버튼눌러서 세울 경우엔 센서 감지 이동 옵션일 경우 계속 굴러 간다. 2017/06/08 HSK.
+2. Manual 투입 옵션 보이지 않게 하고 사용 하는 부분을 모두 없애버림.
+   - Manual 투입도 CellRcvThr쪽으로 시퀀스 이동.
+   - 옵션 설정 없이 메뉴얼로 셀을 투입 하든 설비에서 받든 둘다 가능 하도록 수정.
+
+VERSION 2017-06-08-1
+1.뮤팅 동작 할 때 모터 이동 버튼은 전부 막아 버렸다(환경안전 요구사항) 2017/06/08 HSK.
+2. RCMD 아이디가 알람 발생 후에 트랙인 재시도를 안하고 RCMD 체크를 할 때 1번 체널에서 2번 ID를 체크하는 경우가 있어 분리. 2017/06/08 HSK.
+  -  RCMD 아이디가 현재 1번 체널인지 2번 체널인지 체크 하는 변수 2017/06/08 HSK.
+  -  트랙인 시점에 RCMD CH 구별 플래그 온 2017/06/08 HSK
+  -  트랙인 RMCD체크 완료 후에 RCMD CH 구별 플래그 오프 2017/06/08 HSK
+  -  혹시 몰라 마지막 스텝에서 초기화 2017/06/08 HSK.
+
+
+3. 턴테이블 이동 체크가 빠져 있어서 도어열시에 알람 발생 2017/06/07 HSK.
+4. 피치 이동 시킨 이후에 이동 감지 못하고 알람 발생 후 재시작시 센서는 감지되고 데이터가 없을 경우 데이터 생성 2017/06/07 HSK.
+5. motor Setup 화면 상에서는 뮤팅 동작 안되게. 2017/06/07 HSK.
+   - Setup 탭을 들어갔는지 확인 하는 변수 2017/06/07 HSK.
+6. 알람 발생 시에 앞 설비에서 셀 받는 쓰레드가 따로 있어 멈추지 않지만 메뉴얼로 받을 때만 스탑 2017/06/07 HSK.
+
+
+7. TR Get에도 내리는 명령이 있어, 내려가고 있을 때는 굳이 안내린다. 2017/06/06 HSK.
+8. Alarm 발생 시에 Buf Conv에 트레이가 있고 데이타는 아웃 리프트에 있을 경우 재시작시 해당 시퀀스 탈수 있도록 수정 2017/06/06 HSK
+9. 로더 투입을 피치이동과 셀감지시 까지 이동 두가지로 가져가서 쓸 수 있도록 수정.
+
+VERSION 2017-06-04-1
+//2017-06-04,SKCHO 
+1. FDC 상태 화면에서 OFFSET 파일 읽기 버튼 추가
+2. ok tray out 배출시 알람 발생하여 시퀀스가 끝나지 않은 상태에서 작업자가 트레이 뺐을 경우 ,ok in lift가 align을 하지 않고 무한정지하는 것을 임시 방지
+    - theProcBank.m_bCarrierReportWaitCheck = FALSE; 변수 위치 이동
+
+VERSION 2017-06-03-1
+//2017-06-03,SKCHO 
+1. 환경안전 지적사항
+  - SetUp 모터화면에서 원점 이동할 경우 뮤팅 기능 안되게 수정
+
+VERSION 2017-05-27-2
+//2017-05-31,SKCHO 
+1. 트레이가 버퍼쪽으로 이동되면 트레이데이터 이동, 트레이 버퍼로 이동후 리프트 암이 올라가는 중 알람이 발생하고 COMPLETE버튼 눌렀을 경우 트레이 데이터 안지워지는 버그 수정
+	TrayData_from_to(GOOD_IN_TRAY_PORT,TRAY_INFO_POS_GOOD_OUT_LIFT,TRAY_INFO_POS_GOOD_OUT_BUFFER);
+	CIM_TRAYProcess(_T("352"),_T("2"));
+2.  COMPLETE버튼을 계속 누르면353 보고 계속되는 버그 수정, 보고시 트레이 유무 확인하고 보냄
+
+VERSION 2017-05-27-1
+//2017-05-27,SKCHO, 
+1. LOAD TR X축 인터락 설정, Z축이 Get or Put에서 Up 위치가 아니면 이동 못하게 수정(티칭 인원 요청)
+  if ((LDTRZUpPosChk() == FALSE))
+  //if ((LDTRZGetPosChk() == TRUE) || (LDTRZPutPosChk() == TRUE))
+
+VERSION 2017-05-26-1
+//2017_05_26, SKCHO.
+1. 통계화면 수정 24시->0 시로 수정(24시 데이터는 표시가안됨 수정)
+2. 날짜 변경시 버그 수정 예를 들어 25일에서 24일을 조회하고 26로 시간이 넘어가면 통계화면에서 25일로 안넘어감
+
+VERSION 2017-05-25-1
+//2017_05_25, JHLIM.
+1. NG TRAY 티칭화면 리프트 암/ 하부 리프트 구분
+//2017-05-25, SKCHO
+2. 통계 생산 수량 버그 수정
+   - 통계화면에서 이전 날짜를 선택하고 메인으로 와서 런을 진행하면 데이터가 리셋이 되어 생산 수량이 맞지 않음
+
+VERSION 2017-05-23-3
+//2017_05_23, JSJUNG.
+1. CELL LOG 내의 UNLOADER OUT TACK TIME ->UNLOADER OUT TIME 이름변경(삼성요청)
+2.      "        CELL UNLOAD TACT ->TACT TIME 같은(변수사용) 값 표시(삼성요청)
+//2017-05-23, skcho
+3. GOOD/NG IN ALIGN에 트레이가 없고 BUFFER에도 트레이가 없을때 부저 발생(오퍼레이터 알림음)	
+
+VERSION 2017-05-23-2
+//2017_05_23, JSJUNG.
+1. 프리얼라인TR Z축이 UP위치 상태일때 어퍼셔틀/로우셔틀 이동가능
+	if (Chk_PATR_ZAxis_UpPos() == FALSE)
+
+VERSION 2017-05-23-1
+//2017-05-23, skcho
+1. 채널1에서 MCR READING FAIL(타임아웃)일 경우 채널2에서 READING후 결과 기달릴때 채널1값이 변수에 저장되는 경우 발생
+   하여 채널별로 MCR DATA 저장하는 변수를 생성함
+    void CUnitCtrlBank::Trigger(MCR_UNIT Unit,JIG_CH nCh)
+  	CString m_strCh1LastCellID;	CString m_strCh2LastCellID;	int m_nMCRChannel;
+    CString CUnitCtrlBank::MCR_GetLastID(JIG_CH nCh)
+	LRESULT CMainFrame::OnUpdateUPPERMCRData(WPARAM wParam, LPARAM lParam)
+	LRESULT CMainFrame::OnUpdateLOWERMCRData(WPARAM wParam, LPARAM lParam)
+	//2017-05-23,skcho ,채널 구분
+	theProcBank.m_nMCRChannel = JIG_CH_1;
+
+VERSION 2017-05-22-2
+//2017-05-22, skcho
+1. track in 보고후 셀ID가 다를 경우 검사 skip 추가
+	pCellInfo->m_bIsInspectionSkip = TRUE;
+
+VERSION 2017-05-22-1
+//2017-05-22, skcho
+1. 260 뚜껑 보고시 subcarrier가 1개일 경우 아이디 보고 안하는 버그 수정
+    void CTrayBank::WriteCarrierCloseInfo(TRAY_PORT port, TRAY_INFO_POS pos)
+
+
+VERSION 2017-05-20-2
+//2017-05-20,skcho
+1. ok tray in lift 무한 정지시 ClickGxbtnTrayinPitchdownMove 함수에 변수 클리어 추가
+void CFormTeachGoodTray::ClickGxbtnTrayinPitchdownMove()
+{
+	theUnitFunc.InTrayLiftZ_PitchDown(1.5);
+
+	//2017-05-20,skcho, ok tray out 배출시 알람 발생하여 시퀀스가 끝나지 않은 상태에서 작업자가 트레이 뺐을 경우
+	//ok in lift가 align을 하지 않고 무한정지하는 것을 임시 방지
+	theProcBank.m_bCarrierReportWaitCheck = FALSE;
+}
+
+VERSION 2017-05-20-1
+//2017-05-20,skcho
+1. 비가동 로그 Write Start함수에 추가
+2. SetTP함수 정리
+
+
+
+VERSION 2017-05-19-2
+//2017-05-19,skcho, 
+1. 컨택 NG이고 RCMD 22이면 'O'로 보고하고 DESCRIPTION 에 INSPECTION FAIL로 남김 - CIM 요청
+2. Set_RCMDResult();Get_RCMDResult();
+
+VERSION 2017-05-19-1
+#2017-05-19,skcho, 
+ - CARRIER_REPORT_TIMEOUT 디파인 10. 보고
+ - CELL_REPORT_TIMEOUT 디파인 30. 보고
+
+
+VERSION 2017-05-18-1
+#2017-05-18,skcho, 
+1.상위 인터락 ID 없이 인터락 내려와 로그 남지 않음
+	//if (theProcBank.alarm_info_inter[i].szERR_ID != _T(""))
+
+VERSION 2017-05-17-2
+#2017-05-17,skcho,
+1. m_nJobChangeType = 0; 초기화 추가 unloader robot이 JOBCHANGE 변수 초기화가 안되서 TRAY에 못 담는 현상 발생
+
+VERSION 2017-05-17-1
+#2017-05-17,skcho
+1. 301/302 RFTAG에 CELL ID로 보고 - CIM QUAL 요청사항
+2. NG 포트 보고 삭제
+
+
+VERSION 2017-05-16-1
+#2017-05-16,JSJUNG
+1. 레시피화면 변경취소(CANCLE) 버튼 그냥 눌럿을때 프로그램 다운 현상으로 모델 편집 버튼 클릭이 되었을 경우에 클릭되도록 수정
+
+VERSION 2017-05-15-1
+#2017-05-15,skcho
+1. Track-in log OK,NoneCell,Already 분리
+2. 트레이 보고 후 판정 결과 pass/fail/etc 처리하게 수정
+  - CIM_CarrierReportCheck();
+  - fail 과 타임아웃 알람 구분
+  - 타임아웃 알람 ID 신규 생성(알람리스트 수정)
+
+3. 배출 마지막에 알람 발생해도 good lift pitch는 할수 있게(무한루프발생가능성있음)
+   theProcBank.m_bCarrierReportWaitCheck = FALSE 추가; -  CStateGoodTrayOutLift::Run()
+
+
+VERSION 2017-05-13-1
+#2017-05-13,skcho,JSJUNG
+1. 뚜껑 열기 보고 262, 뚜껑 덮기 보고 260, 어싸인 보고 260
+   - Release보고 ini파일 분리(Carrier_ReleaseReport.ini,Carrier_CloseReport.ini)
+   - EQUIP_SET_CARRIER_CLOSE_REQUEST(260) 메시지 생성(뚜껑 덮는 보고하기 위해서) - 강제구성 carrier type-13, 정상 carrier type- 11
+   - assign 보고시 메인 carrier_id는 공백으로 보냄 -강제구성carrier type- 3, 정상 carrier type-1
+
+2. Tray ID 읽고 -> 351보고 -> CEID=262 발생후 PASS 일 경우에만 CEID=350 보고로 수정 요청
+
+3. CEID 352,353보고시 Carrier id 및 carrier type - batchtray로 보고 변경
+
+
+#2017-05-04,HSK
+열기 뚜껑보고 했음을 나타내는 변수.2017/05/04 HSK.
+릴리즈 트레이에 첫셀이 담기는 시점에 301 보고 2017/05/04 HSK.
+CIM_CarrierCellLoadEnd()에서 필요한 현재 트레이 포트의 셀 갯수를 더해준다. 2017/05/04 HSK.
+뚜껑 배출 보고 전에 마지막 셀 302 보고. 2017/05/04 HSK.
+Assign은 그냥 무조건 해준다. 2017/05/04 HSK.
+TR이 집고 있는 트레이가 비어있는 경우에 무조건 꽉참으로 보고. 2017/05/04 HSK.
+환경안전 지적사항 - 뮤팅 런중에 동작 안되게. 2017/05/04 HSK
+환경안전 지적사항 - 뮤팅 켜져 있을 때 모터 이동시 문 열리면 모터 정지 2017/05/04 HSK
+Step Interlock 발생시 어느 셀인지 알기 위해 추가 .2017/05/04 HSK.
+디렉토리 없을 때 파일 생성 안되어 추가 2017/05/04 HSK.
+#2017-05-03,HSK
+OPCALL시에는 멈추지 않는다. 2017/05/03 HSK.
+트레이 뚜껑 열기 보고 2017/05/03 HSK
+Assign 보고 덮개 뚜껑도 Assign 2017/05/03 HSK. 
+SetZone A를 다시 보내 주면 컨택이 풀린다 ..2017/05/03 HSK.
+중복 보고 하여 하나 삭제 2017/05/03 HSK.
+Teachinterlock에서는 시퀀스에서도 반영되서 여기로 뺌 2017/05/03 HSK.
+#2017-05-02,HSK
+검사 안할 경우에 C Zone 결과 넣어 준다 2017/05/02 HSK.
+사용 하는 경우에도 스킵인 경우가 있다 2017/05/02 HSK.
+각 신호 보낼때 마다 전부다 보냄. 설비 멈추고 중간에 바꼇을수 있다. 2017/05/02 HSK.
+각 에러 스텝 마다 신호 초기화 2017/05/02 HSK.
+필요 없는 Good In 쪽 로워 얼리인 동작 시퀀스는 삭제 한다 2017/05/02 HSK.
+IOCheckTHR에서 제거 하는 거 옴김. 2017/05/02 HSK
+메인 쓰레드에서 알람 뜨는 거 상관 없이 진행 한다. 2017/05/02 HSK.
+#2017-05-01,HSK
+Light 알람 발생 시에는 시퀀스 멈추지 않고 동작. 2017/05/01 HSK.
+LoadConv 티칭 구동 시에 셀 감지 되면 세운다 2017/05/01 HSK.
+감지 안되도 스텝 엔드.2017/05/01 HSK.
+NG IN LIFT BUFFER에 트레이 있을 경우엔 트레이 UP CYL 동작 2017/05/01 HSK.
+NG TRAY IN LIFT 티칭 인터락 추가 2017/05/01 HSK
+NG TRAY IN LIFT MID POS 동작 UI 추가 2017/05/01 HSK
+#2017-04-30,HSK
+네트워크 체크 2017/04/30 HSK.
+설비 멈추고 중간에 PG 점검 후에 진행 할 때 셋존이 다를 수 있어 리스타트 할때 다시 해준다.2017/04/30 HSK.
+만약 리스타트 할때 굿인 리프트에 트레이 있으면 트레이 데이터 생성 2017/04/30 HSK.
+트레이 TR이 셀이 없는 트레이를 집고 있는 경우는 뚜껑밖에 없다. 2017/04/30 HSK.
+Good In Align에 셀이 없고 Out Tray에 트레이 있을 때 Lot End 치면 수량이 안맞아서 LotEnd가 안되서 우선 주석.2017/04/30 HSK.
+모든 트레이 배출 하면 부저 꺼준다 2017/04/30 HSK
+메뉴얼에서 동작 시켜 놓고 안끄는 경우가 있어서 설비 스타트시 꺼준다.2017/04/30 HSK.
+런 돌리기전 통신 연결 상태 확인 한다. 2017/04/30 HSK
+#2017-04-29,HSK
+트레이 시퀀스 쪽은 쓰레드 펑션에서 센서 체크를 거의 하지 않는다. 시퀀스 타고 나서 안에서 하도록 한다.
+센서 체크 빼려고 했으나 뺄 경우에 트레이가 없어도 피치 업하는 경우가 생길 수있어서 남겨둠. 2017/04/29 HSK
+알람 발생 해서 다운 위치에 있을 때를 대비하여 추가 2017/04/29 HSK.
+알람 발생 시에 포워드 된 상태로 트레이가 껴있는 경우가 있다 2017/04/29 HSK.
+쓰레드펑션에서 체크 하지 말고 진행시에 그냥 동작 시켜 버리자. 2017/04/29 HSK.
+전체적으로 피치업 시퀀스를 수정 하여 정리 하였다 2017/04/29 HSK
+Tray Data 없다고 하여 시퀀스 탔는데 센서 감지 되어 있으면 알람. 2017/04/29 HSK.
+시퀀스 안에서 동작 시키자 2017/04/29 HSK
+트레이 데이타로 관리 하여 시퀀스 진입 시퀀스 안에서 데이타는 없는데 센서 감지 될 경우 알람. 2017/04/29 HSK
+#2017-04-28,HSK
+컨베어에 도착 하면 트레이 데이터 생성 2017/04/28 HSK.
+AGV 통신 할 때 설비 상태는 이니셜 됬는지만 체크 한다. 2017/04/28 HSK.
+센서 체크 하지 않는다. 2017/04/28 HSK.
+#2017-04-27,HSK
+경알람 보고 추가. 2017/04/27 HSK
+티칭 모드 일 때만 플래그 셋 2017/04/27 HSK
+Cell Info 중복 보고 해도 이상 없다고 하여 주석 2017/04/27 HSK
+Cell Info 중복 보고 해도 이상 없다고 하여 주석 2017/04/27 HSK
+안떠도 되는 알람 2017/04/27 HSK
+FAIL 추가 해야 됨. 2017/04/27 HSK
+Assign 보고 판정 여부 추가 2017/04/27 HSK.
+블로우 끄는 시점을 TR이 올라온것 체크하도록 변경 2017/04/27 HSK
+블로우를 불어도 티알에 트레이가 딸려오는 현상이 있어서 마지막에 한번더 체크 2017/04/27 HSK
+Run이 꺼지는데 이때 우리 신호를 끄란다. 2017/04/27 HSK
+#2017-04-26,HSK
+Pause 상태나 Fault 상태에서는 모터가 움직 일 때만 체크 한다.2017/04/26 HSK.
+Ch Skip ID 체크 하는 건데 아직 안함 2017/04/26 HSK.
+Vision 연속 알람 발생 아직 안씀 2017/04/26 HSK
+뺑뺑이 모드 추가 체크 2017/04/26 HSK 아직 안함.
+Contact Align 요청 시에 무조건 현재 위치하는 지그를 보내면 안된다.... 2017/04/26 HSK
+뺑뺑이 모드 셋존 스킵 아직 미사용 2017/04/26 HSK
+뺑뺑이 모드 사용 시 셀 정보 클리어 아직 미사용 2017/04/26 HSK.
+체널 스킵과 검사 뺑뺑이 모드 옵션 인데 아직 안함 .2017/04/26 HSK.
+뺑뺑이 모드시 컨텍 풀면 안됨 아직 미사용 2017/04/26 HSK.
+연속 VISION 불량 발생시 알람 띄우기.2017/04/26 HSK.
+뺑뺑이 모드시에 D Zone 작업 끝날때 셀로그 기록 아직 미사용 2017/04/26 HSK
+Ch Skip Set하는 함수. 아직 사용 안함. 2017/04/26 HSK.
+Ch Skip 체크 하는 건데 삼성 요구 전엔 검증 하지 않을거. 2017/04/26 HSK.
+Jig ch Skip 체크 용인데 아직 안함. 2017/04/26 HSK
+뺑뺑이 모드시에는 셀정보 체크 안함 아직 미사용 2017/04/26 HSK.
+뺑뺑이 모드시에는 UD TR이 셀을 집어가면 안됨 아직 미사용 2017/04/26 HSK.
+Vision 알람 발생 카운트 아직 안함 2017/04/26 HSK.
+뺑뺑이 모드시에 강제로 넣어줘야할 내용들을 넣어 준다 아직 미사용 2017/04/26 HSK
+#2017-04-26,HSK
+Job End가 아닐때도 셀을 체크 하도록 한다. 17/04/26 HSK
+Cell Get 한후 Up하는 모든 Z 축 스피드를 Put한후 Up하는 스피드 보다 느리게 한다. 17/04/26 HSK.
+트레이 배출 경고 Buzzer 추가. 17/04/26 HSK.
+Get이후 X가 Out위치까지 빠지는동안 Inlift Z축이 작업을 못해서 수정. 17/04/26 HSK 
+NG OUT LIFT에 트레이가 꽉차고 BUFF CONV에 트레이 있을 때 계속 리프트에 트레이를 쌓는거 수정. 17/04/26 HSK
+#2017-04-25,HSK
+MCR 재연결 할 때 디스커넥트 할 때 알람 안뜨도록 한다. 17/04/25 HSK
+MCR 재연결 버튼 추가. 17/04/25 HSK
+OUT 변수 추가 후에 적용 안되어 변경. 17/04/25 HSK
+MCR에서 제공하는 ISConnect 함수에서 계속 -1만 반환 하여 추가. 17/04/25 HSK.
+따로 딜레이가 필요없다. 체크 하는 시간이 딜레이다. 17/04/25 HSK.
+제공해주는 함수에서 처리 한다 17/04/25 HSK	
+제공 해주는 트리거 함수 사용 한다. 2017/04/25 HSK
+어짜피 컨택 체크는 전부 해야 한다. 조건문 없앰 2017/04/25 HSK
+Lift Pitch 이동 할 때 TR이 집으러 오는 현상이 있어서 추가. 2017/04/25 HSK
+MCR 재연결 체크 변수. 17/04/25 HSK
+이미지 세이브 함수를 동시호출되서 DEBUG 발생 될 수도 있다고 한다. 복사하자 17/04/25 HSK
+#2017-04-24,HSK
+GOOD쪽에 나갈 트레이가 없을 때 LOT END 꺼지지 않는 현상 막기 위함 17/04/24 HSK
+ReplyCode가 Fail일 경우 대비 하여 아래로 이동 17/04/24 HSK
+ DCR FAIL시에 수동으로 트레이 제거 할 경우 트레이 올리는 시퀀스추가. 17/04/24 HSK
+Good Out Tray에 Tray가 없을 때 뚜껑 덮는 것을 막기 위함 17/04/24 HSK
+CELL이 한개 또는 두개 담길 수 있으므로 시퀀스에서 처리할 수 있도록 한다. 17/04/24 HSK
+CELL을 UNLOADING 하는 것만 이라서 주석. 판정하는 부분에 새로 추가. 17/04/24 HSK
+B Zone에서 VT Align Th 필요한 경우 있어 수정 17/04/24 HSK
+#2017-04-22,HSK
+이게 여기 왜 있는지... 올렸다 내리는 부분도 없어서 주석 17/04/22
+Get위치로 보내는건 다른데서... 17/04/22
+Cell 정보 제거시 들어온 수량 일치 하지 않아서 추가함. 17/04/22
+Motor All Stop 함수 추가...17/04/22
+Judge OK 판정 옵션시에 실제로 판정을 GOOD으로 해준다. 17/04/22 HSK.
+
+
+VERSION 2017-04-23-2
+#2017-04-23,skcho
+1. m_nPre_GoodOutLiftCount변수 추가(static int nTrayInCount변수 삭제)
+   - good tray 배출 후 nTrayIncount변수가 초기화 되지 않아 바로 lotend하면 배출이 안됨
+     따라서 전역변수를 생성하고 배출시 초기화 함.
+
+VERSION 2017-04-23-1
+#2017-04-23,skcho
+1.NG TRAY BUFFER SENSOR 감지에서 2번 센서 제거,NG TRAY가 배출될때 감지 안되는 위치에 있음.
+   BOOL CUnitCtrlBank::BufConvSenChk(TRAY_PORT Port, SENSOR_STATE sen)
+
+2.NG TRAY PORT에서 LOT END  초기화 부분 삭제- GOOD TRAY가 최우선이 되므로 삭제, good tray보다 먼저 동작이 끝나 good tray lot end에 영향을 줌
+    int CStateNGTrayOutLift::Run()
+
+3.NG TRAY LOT END시 NG_TRAY_IN STOPPER가 올라옴 ->NG_TRAY_BUFFER STOPPER 동작으로 변경
+4.통계화면 구성(CStatementDlg)
+
+
+VERSION 2017-04-20-2
+#2017-04-20
+1. (theProcBank.m_TrayBank.GetTrayInfo(GOOD_IN_TRAY_PORT, TRAY_INFO_POS_GOOD_OUT_LIFT)->GetTrayCount()
+  를 theProcBank.GetGoodOutLiftCount()로 변경 및 m_nGoodOutLiftCount 변수 새로 생성하여 트레이 개수 관리 
+
+VERSION 2017-04-20-1
+#2017-04-20
+1. FDC 값 INPUT/OUTPUT 구분해서 표시
+2. IsCell_UnloadTRVacOnOff 함수 추가 (셀유무로 동작하는 함수)
+3. void CUnitCtrlBank::SetCZoneResultSkip(JIG_CH ch) 함수에 검사스킵 플래그 추가
+   - pCellInfo->m_bIsInspectionSkip = TRUE;
+ 
+    
+VERSION 2017-04-19-1
+#2017-04-19
+1. UnloadTRVacOnOff()함수 셀이있을 경우에만 vacon,blowoff되게 수정, 한개만 있을 경우 없는쪽에서 blow on되어 vac알람 발생
+
+
+VERSION 2017-04-18-1
+#2017-04-18
+1. 환경안전 지적사항
+ - 티칭모드에서 이동시 문열리면 모터 정지
+ - 초기화시 뮤팅 기능 안되게
+ - 뮤팅램프 ON시 초기화 안되게
+
+
+VERSION 2017-04-14-2
+#2017-04-17
+1.CarrierID 상위 결과 수신 스텝 추가 및 옵션 추가
+2. 4호기 version 2017-04-15-1과 머지 해야함.
+
+VERSION 2017-04-15-1
+#2017-04-15
+1. 리컨택 없을 시 2차 결과도 NG로 -  BOOL CUnitCtrlBank::A_Zone_ContactChk(JIG_CH nCh)
+2. 다중알람발생시 로그에 정확한 시간 기록하기 위해서 배열로 만듦 - theProcBank.alarm_info[ALARM_MAX],theProcBank.alarm_info_op[OPCALL_MAX],theProcBank.alarm_info_inter[INTERLOCK_MAX]
+
+
+VERSION 2017-04-14-1
+#2017-04-14
+1. mcr image저장 함수 임시 삭제 - 프로그램 다운현상발생
+2. CIM QUAL 진행 중 수정 사항 추가
+   -CELL INFO REQUEST S3F115 추가
+   -PORT INFOMATION 값 일부분 수정
+   -REQUEST 누르면 350 보고하게 수정 - 센서체크함수 삭제 if(_func.BufConvSenChk(GOOD_IN_TRAY_PORT,SENSOR_ON)) 
+
+
+VERSION 2017-04-13-1
+#2017-04-13
+ 1. 메인 화면에 적용된 옵션 표시기능 추가(otend, dryrun,rcmdoff,cellinfoskip)
+ 2. 후방 타워램프 연동 추가(Y-120,Y-121,Y-122 I/O 추가)
+ 3. DRY RUN BUTTON DRY RUN 옵션 일때만 보이게 수정
+
+VERSION 2017-04-12-1
+#2017-04-12
+ 1. lot end시뚜껑 안덮고 배출하는 버그 수정
+    - outlift 트레이 갯수로 뚜껑 판단하여 덮고 배출함.
+
+
+#2017-04-01
+ - lot end시 ok tray 뚜껑 안가져감  ->수정해야함. ->수정완료
+ - mcr에 UV_FAIL이 아닌 다른 FAIL결과가 나타남 ,트래인 시 문제 됨 -> 수정해야함->FAIL로 통일 수정완료
+   - mcr reader에서 실패시  FAIL 문자 보냄
+
+
+
+#2017-04-07,skcho
+1. contact ng일 경우 검사 N, 판정:L 로 보고/ MCR FAIL일 경우 검사N, 판정:O 로보고
+2. 트랙인 후 RCMD수신 대기 시간 0.5초 추가
+
+
+#2017-04-01,
+1. UD_ST와 UD_TR이 셀이 있고 UD_TR이 UD_STAGE위에 있을때 로봇이 움직이지 않음 버그 수정
+	- RESTART Restart_XYTMove 함수에서 조건 애매모호해서 가운데 && 연산자 구분하기 위해서 괄호 추가
+		
+
+
+#2017-03-23
+1. 상태 변환 IDLE 추가
+   - 처음 런시 IDLE로 상태 보고 -> 셀이 투입되면 RUN 상태 보고 ->3분동안 셀 없으면 IDLE로 상태보고
+
+
+#김효수
+ - TRACK OUT보고 시점 변경 -> UNLOAD ROBOT PUT 함수에서 수행
+
+#2017-03-07, skcho
+1. cell info request 요청시 시간아웃되면 알람 후 재요청한다 - cim 요구사항 
+2. AGV I/O 이름 변경 READY->REQUEST, TRANSFER->CONNECTION으로 변경
+3. AGV 함수 이름 변경
+
+#2017-03-06, skcho
+1. 알람 발생 횟수 만큼 리셋시 상위 보고로 변경
+2. 상위에서 recepie 생성할 수 있게 변경(현재 레시피 변경은 안하고 디폴트값으로 생성)
+
+
+
+#2017-03-02, skcho
+1. UL TR_X GET,PUT위치에 맞지않으면  Z 축 설정시 경고메세지 
+    1)TRX_X-GET -> TR_Z_PUT 이면 경고 / TR_X_PUT ->TR_Z_GET 이면 경고 메세지
+2. 티칭 모드에서 문 열려 있으면 이동 명령 안됨
+3. unloader tray id  기능 구현
+   - JOB END 기능 - 셀만 트레이까지 배출
+   - LOT END 기능 - 트레이만 배출
+   - cell 정보를 D:\Cheetah\RunTime\Carrier_Report.ini파일에 만듦
+   
+4. 임의 추출 기능 추가
+   - zone A,B,C,D 에 셀이 있을 경우 설비 정지 상태에서 메인 화면의 셀 위치 버튼을 누르면 406-"O"로 보고하게 함.
+   - CIM_CellLossReport()함수 추가
+5. JobFile Download기능 추가
+   - SetUp 메뉴-PG화면에 버튼 기능 추가
+   - cell 정보를 D:\Cheetah\RunTime\TMDDataList.ini파일에서 읽어옴, 이파일은 가오누리 프로그램에서 생성함.
+
+
+#2017-02-28, skcho
+JOB FILE 동작 순서
+ 1.READ FILE -> ROUTE-> TMD -> TMD COPY START -> TMD CHECKSUM START -> CLIENT CHECKSUM START
+   ->TMD DOWNLOAD START -> EVENT REPORT
+
+
+
+#2017-01-18, skcho
+1. 비가동로그 팝업 다이얼로그 변경
+  - D-AMT 비가동 로그 팝업 다이얼로그로 변경, 신규 클래스 생성(DlgLossTimeNew.cpp)해서 함수 추가
+  - 비가동 로그 및 리스트 관리 클래스 신규 추가 , CLossTimeBank
+  - GausDll 추가 (몇몇 클래스 사용,CGxUtility, CGxIni등), 프로젝트속성에서 라이브러리 경로 추가
+  - 파일 경로 Option.ini / System.ini/NGCodeList.csv define으로 정의 - ConfigBank.cpp
+  - opcall,interlock,terminal dialog static 색상 변경 및 ok 버튼 아이콘 추가
+  - D:\SIRIUS\LOG\MAIN 폴더에 비가동로그 파일 생성 
+  - ConfigSystem.cpp(ReadSystemFile)에서 system.ini 파일 인덱스를 대문자로 변경
+
+
+#2017-01-25
+  - 1,2차분 Define 정의. Stdafx.h 파일에서 AMT_TYPE 사용 할 것만 빼고 나머지 주석.
+  - 2차분 Tray Align 통신 정의 및 UI 작성 및 시퀀스 적용.
+  - 2차분 DCR Reader 통신 정의 및 UI 작성 및 시퀀스 적용.
+  - 2차분 I/O 정의
+  - 통계 정의(택타임,생산수량,알람현황,알람내역)
+  - 메인 화면 UI 추가(Cell Info ,생산현황 , 택타임 표시)
+  - 3개국어 UI 표시 작업.
+#20170129 byskcho
+  1. cim oss 파일 변경으로 인한 추가(CUnitCtrlBank에서 다수 추가)
+    - Unit 별 CHANNEL1,2의 CELL ID,STEP ID, VAC Value FDC 항목에 Write
+	  Unit: JIG-A, JIG-B, JIG-C, JIG-D, UDTR, UDSTAGE
+  2. VAC 리딩을 위한 LD,ULD A/D보드 통신 추가(CSerialManager에 추가)
+
+#20170201 byskcho
+  1.모델 신규 생성시   teach.ini  모델 폴더에 생성 -CIM QUAL 요청
+	- 모델 생성 상위 보고시 body에  teach.ini 값 보고
+  2. interlock, opcall 다중 발생시 최신 아이디 표시 안되는 버그 수정
+  3. cell id reading 후 celli(dinforequest 요청 단계 추가(int CStateAZone::Run())
+     - CIM QUAL 추가 사항  S6F207 요청, S2F103수신
+	 - CELL INFO REQUEST 및 RCMD 시나리오
+	 - S2F103 PASS/ S2F43 - RCMD PASS(21) - 401,609,406 보고
+	 - S2F103 PASS/ S2F43 - RCMD FAIL(21외값) - 401,406 보고
+	 - S2F103 FAIL - 401,609,406보고 없이 NG포트로
+	 - 타임아웃에서만 알람 발생하게하고 BYPASS 기능을 넣어 NG로 보낼수 있음
+
+  4. cellidinforequest요청 실패시 알람 발생, 알람 발생 후 request 바이패스 다이얼로그 추가
+    바이패스 실행 시 track_in 안함, 검사 결과 보고609 ,  track_out 안함.
+
+  5. Tray Request(350보고) -> Tray In으로 이동 완료후(350보고) ->
+
+#2017.2.3 bgkim
+1.알람 리스트 업데이트 추가
+  - 알람 후 조치를 안하고 리셋하면 알람 재발생하여 리스트 중복 업데이트 됨
+2.기존 다중 알람이 발생 시 최초 알람만 발생하고 나머지 알람은 무시되었으나,
+  각 알람별로 최초 발생시 알람 페이지에 표시 및 알람 리스트에 남김.
+3. 검사부 Lot End 버그 수정(트레이 부 추가 수정 필요)
+
+#20170205 byskcho
+1. 블로우 오프 TR  업위치 이동 완료 후로 변경
+   -CStatePATRLowerGet::Run(),CStateLDTRGet(),CStatePATRUpperGet()
+
+2.알람이 발생하여 로봇이 언로딩위치 있을때 로봇을 원점기동하면 로봇이 다시 언로딩위치로 가는 버그 수정
+  -CFormTeachLoader::LDRobotOrg()
+
+3.MCR Reading text  메인폼에 추가
+4.앞단설비 통신 상태 표시 메인폼에 추가
+
+20170211 byskcho
+1. 검사PC 다운현상 방지 위해 검사 중 알람 발생시 동일 CELL에 대해 재검 스킵 하게 함.
+    - 검사 결과는 NG로 (유원식)
+
+2017.2.11 bgkim
+1. OK Tray Lot End 시 OK Tray TR과 OK Out Lift Z 동시에 작동되는 문제 수정.
+2. 각 트레이 부위 트레이 정보 표시 안되는 문제 수정.
+   - 트레이 정보 버그로 OK Out Lift Z가 리스타트 시 위로 상승하는 문제 수정.
+   - OK/NG Lift 에 트레이 정보 삭제가 되지 않아 트레이 재 투입이 안되는 문제 수정.
+
+//2017-02-26, jhLee, Job file download관련 기능 추가

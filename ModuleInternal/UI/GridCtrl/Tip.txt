@@ -1,0 +1,19 @@
+Font º¯°æ
+	LOGFONT lf;
+	m_Grid.GetFont()->GetLogFont(&lf);
+
+	CFontDialog dlg(&lf);
+	if (dlg.DoModal() == IDOK) {
+		dlg.GetCurrentFont(&lf);
+
+		CFont Font;
+		Font.CreateFontIndirect(&lf);
+		m_Grid.SetFont(&Font);
+        OnItalics();	
+		m_Grid.AutoSize();
+		Font.DeleteObject();	
+	}
+
+
+
+
